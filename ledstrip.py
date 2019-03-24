@@ -1,6 +1,8 @@
 import argparse
 import logging
 import time
+import signal
+import sys
 
 #import board
 #import neopixel
@@ -35,6 +37,18 @@ strip.begin()
 
 strip.setPixelColor(0, COLOR)
 strip.show()
+
+class SIGINT_handler():
+    def __init__(self):
+        self.SIGINT = False
+
+    def signal_handler(self, signal, frame):
+        print('You pressed Ctrl+C!')
+        self.SIGINT = True
+
+
+signal_handler = SIGINT_handler()
+signal.signal(signal.SIGINT, signal_handler.signal_handler)
 
 def colorize(args, value):
     brightness = args.brightness
@@ -109,6 +123,10 @@ def main(args):
             pass
 
         time.sleep(1)
+
+        if signal_handler.SIGINT:
+            strip.clear()
+            break
 
 
 if __name__ == '__main__':
