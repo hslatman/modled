@@ -55,10 +55,11 @@ def main(args):
         try:
             # NOTE: hier wellicht read_coils index aanpassen?
             # De read_coils doet volgens mij ook een connect() elke keer een connect()
-            result = client.read_coils(1, 1, unit=unit)
+            #result = client.read_coils(1, 1, unit=unit)
 
             # NOTE: hier wordt het eerste bit op index 0 van het resultaat ingeladen; wellicht aanpassen
-            value = result.bits[0]
+            #value = result.bits[0]
+            value = 0
 
             # NOTE: alternatief lezen van discrete inputs?
             #result = client.read_discrete_inputs(0, 8, unit=unit)
