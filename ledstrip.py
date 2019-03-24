@@ -33,7 +33,7 @@ from pymodbus.client.sync import ModbusTcpClient
 strip = Adafruit_NeoPixel(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
 strip.begin()
 
-strip.setPixelColor(I, COLOR)
+strip.setPixelColor(1, COLOR)
 strip.show()
 
 def colorize(args, value):
