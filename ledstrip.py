@@ -2,10 +2,13 @@ import argparse
 import logging
 import time
 
-import board
+#import board
+#import neopixel
+
 import neopixel
 
-PIXEL_PIN = board.D18
+PIXEL_PIN = 18
+
 ORDER = neopixel.RGB
 
 handler = logging.StreamHandler()
