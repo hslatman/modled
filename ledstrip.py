@@ -38,11 +38,11 @@ from pymodbus.client.sync import ModbusTcpClient
 class Strip(Adafruit_NeoPixel):
 
     def fill(self, color):
-        for index in self.numPixels():
+        for index in range(self.numPixels()):
             self.setPixelColor(index, color)
     
     def clear(self):
-        for index in self.numPixels():
+        for index in range(self.numPixels()):
             self.setPixelColor(index, CLEAR)
 
 
@@ -122,7 +122,7 @@ def main(args):
         #    strip.setPixelColor(index, color)
         #    strip.show()
 
-        strip.fill(blue)
+        strip.fill(color)
         strip.show()
 
         if signal_handler.SIGINT:
@@ -130,6 +130,8 @@ def main(args):
                 strip.setPixelColor(index, CLEAR)
                 strip.show()
             break
+
+        time.sleep(1)
 
         loop += 1
 
