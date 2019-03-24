@@ -60,17 +60,9 @@ def colorize(args, value):
 
     if color != None:
 
-        strip.setPixelColor(1, color)
-        strip.setPixelColor(2, color)
-        strip.setPixelColor(3, color)
-        strip.setPixelColor(4, color)
-        strip.setPixelColor(5, color)
-        strip.setPixelColor(6, color)
-        strip.setPixelColor(7, color)
-        strip.setPixelColor(8, color)
-        strip.setPixelColor(9, color)
-        strip.setPixelColor(10, color)
-        strip.show()
+        for index in range(LEDCOUNT):
+            strip.setPixelColor(index, color)
+            strip.show()
 
     time.sleep(1)
 
