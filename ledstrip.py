@@ -18,6 +18,7 @@ DMA = 5
 INVERT = False
 BRIGHTNESS = 255
 COLOR = Color(255, 255, 255)
+CLEAR = Color(0, 0, 0)      # clear (or second color)
 
 
 #PIXEL_PIN = 18
@@ -125,7 +126,9 @@ def main(args):
         time.sleep(1)
 
         if signal_handler.SIGINT:
-            strip.clear()
+            for index in range(LEDCOUNT):
+                strip.setPixelColor(index, CLEAR)
+                strip.show()
             break
 
 
