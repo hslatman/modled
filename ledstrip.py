@@ -45,6 +45,17 @@ class Strip(Adafruit_NeoPixel):
         for index in range(self.numPixels()):
             self.setPixelColor(index, CLEAR)
 
+    def cycle(self, colors, times=3):
+        # TODO: how long should one 'loop' take?
+        loop = 0
+        while loop < (len(colors) * times):
+            color = colors[int(loop % len(colors))]
+
+            self.fill(color)
+            self.show()
+            
+            time.sleep(1)
+            loop += 1
 
 #strip = Adafruit_NeoPixel(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
 #strip.begin()
@@ -112,28 +123,31 @@ def main(args):
     blue = Color(0, 0, 255) # blauw
 
     colors = [red, green, blue]
-    loop = 0
+    
+    strip.cycle(colors)
 
-    while True:
 
-        color = colors[int(loop % 3)]
+    #loop = 0
+
+    #while True:
+
+    #    color = colors[int(loop % 3)]
 
         #for index in range(LEDCOUNT):
         #    strip.setPixelColor(index, color)
         #    strip.show()
 
-        strip.fill(color)
-        strip.show()
+    #    strip.fill(color)
+    #    strip.show()
 
-        if signal_handler.SIGINT:
-            for index in range(LEDCOUNT):
-                strip.setPixelColor(index, CLEAR)
-                strip.show()
-            break
+    #    time.sleep(1)
 
-        time.sleep(1)
+    #    loop += 1
 
-        loop += 1
+    #   if signal_handler.SIGINT:
+    #        strip.clear()
+    #        strip.show()
+    #        break
 
     #while True:
 
