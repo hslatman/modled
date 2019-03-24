@@ -5,11 +5,22 @@ import time
 #import board
 #import neopixel
 
-import neopixel
+#import neopixel
 
-PIXEL_PIN = 18
+from neopixel import *
 
-ORDER = neopixel.RGB
+LEDCOUNT = 300
+GPIOPIN = 18
+FREQ = 800000
+DMA = 5
+INVERT = False
+BRIGHTNESS = 255
+COLOR = Color(255, 255, 255)
+
+
+#PIXEL_PIN = 18
+
+#ORDER = neopixel.RGB
 
 handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)-20s - %(levelname)-16s - %(message)s')
@@ -19,12 +30,17 @@ logger = logging.getLogger(__name__)
 
 from pymodbus.client.sync import ModbusTcpClient
 
+strip = Adafruit_NeoPixel(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
+strip.begin()
+
 def colorize(args, value):
     brightness = args.brightness
     num_pixels = args.num_pixels
 
-    pixels = neopixel.NeoPixel(PIXEL_PIN, num_pixels, brightness=brightness, auto_write=False, pixel_order=ORDER)
+    #pixels = neopixel.NeoPixel(PIXEL_PIN, num_pixels, brightness=brightness, auto_write=False, pixel_order=ORDER)
     
+    
+
     # NOTE: doe iets met value; ik weet nog niet precies wat de waarde kan zijn
     logger.info(value)
     color = None
