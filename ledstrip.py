@@ -10,6 +10,8 @@ import sys
 #import neopixel
 
 from neopixel import *
+from neopixel import Color
+from neopixel import Adafruit_NeoPixel
 
 LEDCOUNT = 300
 GPIOPIN = 18
@@ -17,12 +19,12 @@ FREQ = 800000
 DMA = 5
 INVERT = False
 BRIGHTNESS = 255
+
 COLOR = Color(255, 255, 255)
 CLEAR = Color(0, 0, 0)      # clear (or second color)
 
 
 #PIXEL_PIN = 18
-
 #ORDER = neopixel.RGB
 
 handler = logging.StreamHandler()
@@ -36,17 +38,14 @@ from pymodbus.client.sync import ModbusTcpClient
 strip = Adafruit_NeoPixel(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
 strip.begin()
 
-strip.setPixelColor(0, COLOR)
-strip.show()
 
 class SIGINT_handler():
     def __init__(self):
         self.SIGINT = False
 
     def signal_handler(self, signal, frame):
-        print('You pressed Ctrl+C!')
+        print('Please wait for LEDs to turn off...')
         self.SIGINT = True
-
 
 signal_handler = SIGINT_handler()
 signal.signal(signal.SIGINT, signal_handler.signal_handler)
@@ -71,7 +70,7 @@ def colorize(args, value):
     #pixels.fill(color) 
     #pixels.show()
 
-    print('here')
+    #print('here')
 
     if color != None:
 
@@ -95,16 +94,39 @@ def main(args):
     # NOTE: verbindt de client met de server
     #client.connect()
 
+    red = Color(255, 0, 0) # rood
+    green = Color(0, 255, 0) # groen
+    blue = Color(0, 0, 255) # blauw
+
+    colors = [red, green, blue]
+    loop = 0
+
     while True:
 
-        try:
+        color = colors[int(loop % 3)]
+
+        for index in range(LEDCOUNT):
+            strip.setPixelColor(index, color)
+            strip.show()
+
+        if signal_handler.SIGINT:
+            for index in range(LEDCOUNT):
+                strip.setPixelColor(index, CLEAR)
+                strip.show()
+            break
+
+        loop += 1
+
+    #while True:
+
+    #    try:
             # NOTE: hier wellicht read_coils index aanpassen?
             # De read_coils doet volgens mij ook een connect() elke keer een connect()
             #result = client.read_coils(1, 1, unit=unit)
 
             # NOTE: hier wordt het eerste bit op index 0 van het resultaat ingeladen; wellicht aanpassen
             #value = result.bits[0]
-            value = 0
+    #        value = 0
 
             # NOTE: alternatief lezen van discrete inputs?
             #result = client.read_discrete_inputs(0, 8, unit=unit)
@@ -115,26 +137,26 @@ def main(args):
 
             # NOTE: meer voorbeelden: https://github.com/riptideio/pymodbus/blob/master/examples/common/synchronous_client.py
         
-            colorize(args, value)
+    #        colorize(args, value)
 
-            client.close()
+    #        client.close()
 
-        except:
+    #    except:
             # NOTE: we doen niks om de fout op te vangen; we gaan gewoon door.
-            pass
+    #        pass
 
-        time.sleep(1)
+    #    time.sleep(1)
 
-        if signal_handler.SIGINT:
-            for index in range(LEDCOUNT):
-                strip.setPixelColor(index, CLEAR)
-                strip.show()
-            break
+    #    if signal_handler.SIGINT:
+    #        for index in range(LEDCOUNT):
+    #            strip.setPixelColor(index, CLEAR)
+    #            strip.show()
+    #        break
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Ledstrip Control.')
-    parser.add_argument('host', type=str, help='The Modbus server host (hostname / IP)')
+    parser.add_argument('host', type=str, default='127.0.0.1', help='The Modbus server host (hostname / IP)')
     parser.add_argument('port', nargs='?', default=502, type=int, help='The Modbus server port number')
     parser.add_argument('brightness', nargs='?', type=float, default=0.2, help='The Modbus server port number')
     parser.add_argument('num_pixels', nargs='?', type=int, default=300, help='The number of pixels')
