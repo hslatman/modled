@@ -94,8 +94,8 @@ def main(args):
     # NOTE: verbindt de client met de server
     #client.connect()
 
-    red = Color(255, 0, 0) # rood
-    green = Color(0, 255, 0) # groen
+    green = Color(255, 0, 0) # rood
+    red = Color(0, 255, 0) # groen
     blue = Color(0, 0, 255) # blauw
 
     colors = [red, green, blue]
@@ -105,9 +105,12 @@ def main(args):
 
         color = colors[int(loop % 3)]
 
-        for index in range(LEDCOUNT):
-            strip.setPixelColor(index, color)
-            strip.show()
+        #for index in range(LEDCOUNT):
+        #    strip.setPixelColor(index, color)
+        #    strip.show()
+
+        strip.fill(blue)
+        strip.show()
 
         if signal_handler.SIGINT:
             for index in range(LEDCOUNT):
