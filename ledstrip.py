@@ -33,7 +33,7 @@ from pymodbus.client.sync import ModbusTcpClient
 strip = Adafruit_NeoPixel(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
 strip.begin()
 
-strip.setPixelColor(1, COLOR)
+strip.setPixelColor(0, COLOR)
 strip.show()
 
 def colorize(args, value):
@@ -56,6 +56,8 @@ def colorize(args, value):
     #pixels.fill(color) 
     #pixels.show()
 
+    print('here')
+
     strip.setPixelColor(1, color)
     strip.setPixelColor(2, color)
     strip.setPixelColor(3, color)
@@ -68,6 +70,8 @@ def colorize(args, value):
     strip.setPixelColor(10, color)
     strip.show()
 
+    time.sleep(1)
+
 
 def main(args):
     print(args)
@@ -77,10 +81,10 @@ def main(args):
     unit = args.unit
 
     # TODO: logica voor verbinden
-    client = ModbusTcpClient(host, port)
+    #client = ModbusTcpClient(host, port)
 
     # NOTE: verbindt de client met de server
-    client.connect()
+    #client.connect()
 
     while True:
 
