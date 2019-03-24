@@ -137,9 +137,10 @@ def main(args):
     colors = [red, green, blue]
 
     loop = 0
-    while loop < (len(colors) * 4):
+    times = 1
+    while loop < (len(colors) * times):
 
-        color = colors[int(loop % 3)]
+        color = colors[int(loop % len(colors))]
         strip.fill(color, walk=True)
 
         loop += 1
@@ -210,11 +211,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Ledstrip Control.')
-    parser.add_argument('host', type=str, default='127.0.0.1', help='The Modbus server host (hostname / IP)')
-    parser.add_argument('port', nargs='?', default=502, type=int, help='The Modbus server port number')
-    parser.add_argument('brightness', nargs='?', type=float, default=0.2, help='The Modbus server port number')
-    parser.add_argument('num_pixels', nargs='?', type=int, default=300, help='The number of pixels')
-    parser.add_argument('unit', nargs='?', type=int, default=0x00)
+    #parser.add_argument('host', type=str, default='127.0.0.1', help='The Modbus server host (hostname / IP)')
+    #parser.add_argument('port', nargs='?', default=502, type=int, help='The Modbus server port number')
+    #parser.add_argument('brightness', nargs='?', type=float, default=0.2, help='The Modbus server port number')
+    #parser.add_argument('num_pixels', nargs='?', type=int, default=300, help='The number of pixels')
+    #parser.add_argument('unit', nargs='?', type=int, default=0x00)
     #parser.add_argument('--mock', action='store_true', help='Whether or not to mock the connection')
 
 
