@@ -87,8 +87,8 @@ signal_handler = SIGINT_handler()
 signal.signal(signal.SIGINT, signal_handler.signal_handler)
 
 def colorize(args, value):
-    brightness = args.brightness
-    num_pixels = args.num_pixels
+    #brightness = args.brightness
+    #num_pixels = args.num_pixels
 
     #pixels = neopixel.NeoPixel(PIXEL_PIN, num_pixels, brightness=brightness, auto_write=False, pixel_order=ORDER)
 
@@ -120,9 +120,9 @@ def colorize(args, value):
 def main(args):
     print(args)
 
-    host = args.host
-    port = args.port
-    unit = args.unit
+    #host = args.host
+    #port = args.port
+    #unit = args.unit
 
     # TODO: logica voor verbinden
     #client = ModbusTcpClient(host, port)
