@@ -35,9 +35,22 @@ logger = logging.getLogger(__name__)
 
 from pymodbus.client.sync import ModbusTcpClient
 
-strip = Adafruit_NeoPixel(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
-strip.begin()
+class Strip(Adafruit_NeoPixel):
 
+    def fill(self, color):
+        for index in self.numPixels:
+            self.setPixelColor(index, color)
+    
+    def clear(self):
+        for index in self.numPixels:
+            self.setPixelColor(index, CLEAR)
+
+
+#strip = Adafruit_NeoPixel(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
+#strip.begin()
+
+strip = Strip(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
+strip.begin()
 
 class SIGINT_handler():
     def __init__(self):
