@@ -46,29 +46,31 @@ def colorize(args, value):
     logger.info(value)
     color = None
     if value == 0:
-        color = (255, 0, 0) # rood
+        color = Color(255, 0, 0) # rood
     elif value == 1:
-        color = (0, 255, 0) # groen
+        color = Color(0, 255, 0) # groen
     else:
         # NOTE: alle andere gevallen
-        color = (0, 0, 255) # blauw
+        color = Color(0, 0, 255) # blauw
     
     #pixels.fill(color) 
     #pixels.show()
 
     print('here')
 
-    strip.setPixelColor(1, color)
-    strip.setPixelColor(2, color)
-    strip.setPixelColor(3, color)
-    strip.setPixelColor(4, color)
-    strip.setPixelColor(5, color)
-    strip.setPixelColor(6, color)
-    strip.setPixelColor(7, color)
-    strip.setPixelColor(8, color)
-    strip.setPixelColor(9, color)
-    strip.setPixelColor(10, color)
-    strip.show()
+    if color != None:
+
+        strip.setPixelColor(1, color)
+        strip.setPixelColor(2, color)
+        strip.setPixelColor(3, color)
+        strip.setPixelColor(4, color)
+        strip.setPixelColor(5, color)
+        strip.setPixelColor(6, color)
+        strip.setPixelColor(7, color)
+        strip.setPixelColor(8, color)
+        strip.setPixelColor(9, color)
+        strip.setPixelColor(10, color)
+        strip.show()
 
     time.sleep(1)
 
