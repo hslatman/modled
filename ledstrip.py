@@ -135,6 +135,14 @@ def main(args):
     blue = Color(0, 0, 255) # blauw
 
     colors = [red, green, blue]
+
+    loop = 0
+    while loop < (len(colors) * 4):
+
+        color = colors[int(loop % 3)]
+        strip.fill(color, walk=True)
+
+        loop += 1
     
     strip.cycle(colors)
 
