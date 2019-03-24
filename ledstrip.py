@@ -56,7 +56,16 @@ def colorize(args, value):
     #pixels.fill(color) 
     #pixels.show()
 
-    strip.setPixelColor(I, color)
+    strip.setPixelColor(1, color)
+    strip.setPixelColor(2, color)
+    strip.setPixelColor(3, color)
+    strip.setPixelColor(4, color)
+    strip.setPixelColor(5, color)
+    strip.setPixelColor(6, color)
+    strip.setPixelColor(7, color)
+    strip.setPixelColor(8, color)
+    strip.setPixelColor(9, color)
+    strip.setPixelColor(10, color)
     strip.show()
 
 
