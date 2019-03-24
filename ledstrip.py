@@ -35,17 +35,29 @@ logger = logging.getLogger(__name__)
 
 from pymodbus.client.sync import ModbusTcpClient
 
-class Strip(Adafruit_NeoPixel):
+class Ledstrip(Adafruit_NeoPixel):
 
-    def fill(self, color):
-        for index in range(self.numPixels()):
-            self.setPixelColor(index, color)
+    def fill(self, color, walk=False):
+        if walk:
+            for index in range(self.numPixels()):
+                self.setPixelColor(index, color)
+                self.show()
+        else:
+            for index in range(self.numPixels()):
+                self.setPixelColor(index, color)
+            self.show()
     
-    def clear(self):
-        for index in range(self.numPixels()):
-            self.setPixelColor(index, CLEAR)
+    def clear(self, walk=False):
+        if walk:
+            for index in range(self.numPixels()):
+                self.setPixelColor(index, CLEAR)
+                self.show()
+        else:
+            for index in range(self.numPixels()):
+                self.setPixelColor(index, CLEAR)
+            self.show()
 
-    def cycle(self, colors, times=3):
+    def cycle(self, colors, times=3, sleep=1):
         # TODO: how long should one 'loop' take?
         loop = 0
         while loop < (len(colors) * times):
@@ -54,13 +66,13 @@ class Strip(Adafruit_NeoPixel):
             self.fill(color)
             self.show()
             
-            time.sleep(1)
+            time.sleep(sleep)
             loop += 1
 
 #strip = Adafruit_NeoPixel(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
 #strip.begin()
 
-strip = Strip(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
+strip = Ledstrip(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
 strip.begin()
 
 class SIGINT_handler():
@@ -184,6 +196,8 @@ def main(args):
     #            strip.setPixelColor(index, CLEAR)
     #            strip.show()
     #        break
+
+    strip.clear() # NOTE: always clear the strip at the end.
 
 
 if __name__ == '__main__':
