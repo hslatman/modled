@@ -10,7 +10,7 @@ import sys
 #import neopixel
 
 from neopixel import *
-from neopixel import Color
+#from neopixel import Color
 from neopixel import Adafruit_NeoPixel
 
 LEDCOUNT = 300
@@ -20,8 +20,11 @@ DMA = 5
 INVERT = False
 BRIGHTNESS = 255
 
-COLOR = Color(255, 255, 255)
-CLEAR = Color(0, 0, 0)      # clear (or second color)
+
+
+
+COLOR = (255, 255, 255)
+CLEAR = (0, 0, 0)      # clear (or second color)
 
 
 #PIXEL_PIN = 18
@@ -57,7 +60,7 @@ class Ledstrip(Adafruit_NeoPixel):
                 self.setPixelColor(index, CLEAR)
             self.show()
 
-    def cycle(self, colors, times=3, sleep=1):
+    def cycle(self, colors, times=1, sleep=1):
         # TODO: how long should one 'loop' take?
         loop = 0
         while loop < (len(colors) * times):
@@ -96,12 +99,12 @@ def colorize(args, value):
     logger.info(value)
     color = None
     if value == 0:
-        color = Color(255, 0, 0) # rood
+        color = (255, 0, 0) # rood
     elif value == 1:
-        color = Color(0, 255, 0) # groen
+        color = (0, 255, 0) # groen
     else:
         # NOTE: alle andere gevallen
-        color = Color(0, 0, 255) # blauw
+        color = (0, 0, 255) # blauw
     
     #pixels.fill(color) 
     #pixels.show()
@@ -130,9 +133,9 @@ def main(args):
     # NOTE: verbindt de client met de server
     #client.connect()
 
-    green = Color(255, 0, 0) # rood
-    red = Color(0, 255, 0) # groen
-    blue = Color(0, 0, 255) # blauw
+    green = (255, 0, 0) # rood
+    red = (0, 255, 0) # groen
+    blue = (0, 0, 255) # blauw
 
     colors = [red, green, blue]
 
