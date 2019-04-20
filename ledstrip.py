@@ -6,17 +6,15 @@ import time
 
 from rpi_ws281x import *
 
-LEDCOUNT = 300
-GPIOPIN = 18
-FREQ = 800000
-DMA = 10
-INVERT = False
-BRIGHTNESS = 255
-
+LED_COUNT = 300
+LED_PIN = 18
+LED_FREQUENCE = 800000
+LED_DMA = 10
+LED_INVERT = False
+LED_BRIGHTNESS = 255
 
 COLOR = Color(255, 255, 255)
 CLEAR = Color(0, 0, 0)      # clear (or second color)
-
 SLEEP=50/1000 # 50 milliseconds
 
 handler = logging.StreamHandler()
@@ -63,8 +61,6 @@ class Ledstrip(Adafruit_NeoPixel):
             time.sleep(sleep)
             loop += 1
 
-strip = Ledstrip(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
-strip.begin()
 
 class SIGINT_handler():
     def __init__(self):
@@ -102,9 +98,19 @@ def colorize(args, value):
 
     time.sleep(1)
 
+def program1(strip):
+
+    green = Color(255, 0, 0) # rood
+    red = Color(0, 255, 0) # groen
+    blue = Color(0, 0, 255) # blauw
+
+    colors = [red, green, blue]
+    
+    strip.cycle(colors)
+
 
 def main(args):
-    print(args)
+    #print(args)
 
     #host = args.host
     #port = args.port
@@ -116,22 +122,7 @@ def main(args):
     # NOTE: verbindt de client met de server
     #client.connect()
 
-    green = Color(255, 0, 0) # rood
-    red = Color(0, 255, 0) # groen
-    blue = Color(0, 0, 255) # blauw
 
-    colors = [red, green, blue]
-
-    loop = 0
-    times = 1
-    while loop < (len(colors) * times):
-
-        color = colors[int(loop % len(colors))]
-        strip.fill(color, walk=True)
-
-        loop += 1
-    
-    strip.cycle(colors)
 
 
     #loop = 0
@@ -186,13 +177,15 @@ def main(args):
 
     #    time.sleep(1)
 
-    #    if signal_handler.SIGINT:
-    #        for index in range(LEDCOUNT):
-    #            strip.setPixelColor(index, CLEAR)
-    #            strip.show()
-    #        break
+    strip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
+    strip.begin()
 
-    strip.clear() # NOTE: always clear the strip at the end.
+    while True:
+
+        program1(strip)
+
+        if signal_handler.SIGINT:
+            strip.clear() 
 
 
 if __name__ == '__main__':
