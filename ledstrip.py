@@ -1,34 +1,22 @@
 import argparse
 import logging
-import time
 import signal
 import sys
+import time
 
-#import board
-#import neopixel
-
-#import neopixel
-
-from neopixel import *
-#from neopixel import Color
-from neopixel import Adafruit_NeoPixel
+from rpi_ws281x import *
 
 LEDCOUNT = 300
 GPIOPIN = 18
 FREQ = 800000
-DMA = 5
+DMA = 10
 INVERT = False
 BRIGHTNESS = 255
 
 
+COLOR = Color(255, 255, 255)
+CLEAR = Color(0, 0, 0)      # clear (or second color)
 
-
-COLOR = (255, 255, 255)
-CLEAR = (0, 0, 0)      # clear (or second color)
-
-
-#PIXEL_PIN = 18
-#ORDER = neopixel.RGB
 
 handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)-20s - %(levelname)-16s - %(message)s')
@@ -99,20 +87,14 @@ def colorize(args, value):
     logger.info(value)
     color = None
     if value == 0:
-        color = (255, 0, 0) # rood
+        color = Color(255, 0, 0) # rood
     elif value == 1:
-        color = (0, 255, 0) # groen
+        color = Color(0, 255, 0) # groen
     else:
         # NOTE: alle andere gevallen
-        color = (0, 0, 255) # blauw
-    
-    #pixels.fill(color) 
-    #pixels.show()
-
-    #print('here')
+        color = Color(0, 0, 255) # blauw
 
     if color != None:
-
         for index in range(LEDCOUNT):
             strip.setPixelColor(index, color)
             strip.show()
@@ -133,9 +115,9 @@ def main(args):
     # NOTE: verbindt de client met de server
     #client.connect()
 
-    green = (255, 0, 0) # rood
-    red = (0, 255, 0) # groen
-    blue = (0, 0, 255) # blauw
+    green = Color(255, 0, 0) # rood
+    red = Color(0, 255, 0) # groen
+    blue = Color(0, 0, 255) # blauw
 
     colors = [red, green, blue]
 
