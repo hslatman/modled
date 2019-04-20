@@ -17,6 +17,7 @@ BRIGHTNESS = 255
 COLOR = Color(255, 255, 255)
 CLEAR = Color(0, 0, 0)      # clear (or second color)
 
+SLEEP=50/1000 # 50 milliseconds
 
 handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)-20s - %(levelname)-16s - %(message)s')
@@ -33,6 +34,7 @@ class Ledstrip(Adafruit_NeoPixel):
             for index in range(self.numPixels()):
                 self.setPixelColor(index, color)
                 self.show()
+                time.sleep(SLEEP)
         else:
             for index in range(self.numPixels()):
                 self.setPixelColor(index, color)
@@ -43,6 +45,7 @@ class Ledstrip(Adafruit_NeoPixel):
             for index in range(self.numPixels()):
                 self.setPixelColor(index, CLEAR)
                 self.show()
+                time.sleep(SLEEP)
         else:
             for index in range(self.numPixels()):
                 self.setPixelColor(index, CLEAR)
@@ -59,9 +62,6 @@ class Ledstrip(Adafruit_NeoPixel):
             
             time.sleep(sleep)
             loop += 1
-
-#strip = Adafruit_NeoPixel(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
-#strip.begin()
 
 strip = Ledstrip(LEDCOUNT, GPIOPIN, FREQ, DMA, INVERT, BRIGHTNESS)
 strip.begin()
@@ -98,6 +98,7 @@ def colorize(args, value):
         for index in range(LEDCOUNT):
             strip.setPixelColor(index, color)
             strip.show()
+            time.sleep(SLEEP)
 
     time.sleep(1)
 
