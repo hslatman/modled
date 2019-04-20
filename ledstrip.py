@@ -95,7 +95,7 @@ class Ledstrip(Adafruit_NeoPixel):
         """Draw rainbow that uniformly distributes itself across all pixels."""
         for j in range(256 * iterations):
             for i in range(self.numPixels()):
-                strip.setPixelColor(i, self.wheel((int(i * 256 / self.numPixels()) + j) & 255))
+                self.setPixelColor(i, self.wheel((int(i * 256 / self.numPixels()) + j) & 255))
             self.show()
             time.sleep(0.02)
 
@@ -149,8 +149,8 @@ def colorize(args, value):
 
 def program1(strip):
 
-    green = Color(127, 0, 0) # rood
-    red = Color(0, 127, 0) # groen
+    red = Color(0, 127, 0) # rood
+    green = Color(127, 0, 0) # groen
     blue = Color(0, 0, 127) # blauw
 
     colors = [red, green, blue]
@@ -159,8 +159,8 @@ def program1(strip):
 
 def program2(strip):
 
-    green = Color(127, 0, 0) # rood
-    red = Color(0, 127, 0) # groen
+    red = Color(0, 127, 0) # rood
+    green = Color(127, 0, 0) # groen
     blue = Color(0, 0, 127) # blauw
     
     strip.fill(red, walk=True)
@@ -172,7 +172,10 @@ def program3(strip):
     white = Color(127, 127, 127)
     strip.theaterChase(white)
 
-    red = Color(127, 0, 0)
+    green = Color(127, 0, 0)
+    strip.theaterChase(green)
+
+    red = Color(0, 127, 0)
     strip.theaterChase(red)
 
     blue = Color(0, 0, 127)
