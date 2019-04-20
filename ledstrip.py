@@ -122,35 +122,35 @@ class SIGINT_handler():
 signal_handler = SIGINT_handler()
 signal.signal(signal.SIGINT, signal_handler.signal_handler)
 
-def colorize(args, value):
-    #brightness = args.brightness
-    #num_pixels = args.num_pixels
+# def colorize(args, value):
+#     #brightness = args.brightness
+#     #num_pixels = args.num_pixels
 
-    #pixels = neopixel.NeoPixel(PIXEL_PIN, num_pixels, brightness=brightness, auto_write=False, pixel_order=ORDER)
+#     #pixels = neopixel.NeoPixel(PIXEL_PIN, num_pixels, brightness=brightness, auto_write=False, pixel_order=ORDER)
 
-    # NOTE: doe iets met value; ik weet nog niet precies wat de waarde kan zijn
-    logger.info(value)
-    color = None
-    if value == 0:
-        color = Color(255, 0, 0) # rood
-    elif value == 1:
-        color = Color(0, 255, 0) # groen
-    else:
-        # NOTE: alle andere gevallen
-        color = Color(0, 0, 255) # blauw
+#     # NOTE: doe iets met value; ik weet nog niet precies wat de waarde kan zijn
+#     logger.info(value)
+#     color = None
+#     if value == 0:
+#         color = Color(255, 0, 0) # rood
+#     elif value == 1:
+#         color = Color(0, 255, 0) # groen
+#     else:
+#         # NOTE: alle andere gevallen
+#         color = Color(0, 0, 255) # blauw
 
-    if color != None:
-        for index in range(LEDCOUNT):
-            strip.setPixelColor(index, color)
-            strip.show()
-            time.sleep(SLEEP)
+#     if color != None:
+#         for index in range(LEDCOUNT):
+#             strip.setPixelColor(index, color)
+#             strip.show()
+#             time.sleep(SLEEP)
 
-    time.sleep(1)
+#     time.sleep(1)
 
 def program1(strip):
 
-    red = Color(0, 127, 0) # rood
-    green = Color(127, 0, 0) # groen
+    red = Color(127, 0, 0) # rood
+    green = Color(0, 127, 0) # groen
     blue = Color(0, 0, 127) # blauw
 
     colors = [red, green, blue]
@@ -159,8 +159,8 @@ def program1(strip):
 
 def program2(strip):
 
-    red = Color(0, 127, 0) # rood
-    green = Color(127, 0, 0) # groen
+    red = Color(127, 0, 0) # rood
+    green = Color(0, 127, 0) # groen
     blue = Color(0, 0, 127) # blauw
     
     strip.fill(red, walk=True)
