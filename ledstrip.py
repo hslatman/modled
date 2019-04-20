@@ -185,7 +185,8 @@ def main(args):
         program1(strip)
 
         if signal_handler.SIGINT:
-            strip.clear() 
+            strip.clear()
+            break
 
 
 if __name__ == '__main__':
