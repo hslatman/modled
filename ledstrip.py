@@ -27,7 +27,7 @@ from pymodbus.client.sync import ModbusTcpClient
 
 class Ledstrip(Adafruit_NeoPixel):
 
-    def fill(self, color, walk=False):
+    def fill(self, color, walk=False, reverse=False):
         if walk:
             for index in range(self.numPixels()):
                 self.setPixelColor(index, color)
@@ -38,7 +38,7 @@ class Ledstrip(Adafruit_NeoPixel):
                 self.setPixelColor(index, color)
             self.show()
     
-    def clear(self, walk=False):
+    def clear(self, walk=False, reverse=False):
         if walk:
             for index in range(self.numPixels()):
                 self.setPixelColor(index, CLEAR)
@@ -60,6 +60,55 @@ class Ledstrip(Adafruit_NeoPixel):
             
             time.sleep(sleep)
             loop += 1
+
+    def theaterChase(self, color, iterations=10):
+        """Movie theater light style chaser animation."""
+        for j in range(iterations):
+            for q in range(3):
+                for i in range(0, self.numPixels(), 3):
+                    self.setPixelColor(i+q, color)
+                self.show()
+                time.sleep(SLEEP)
+                for i in range(0, self.numPixels(), 3):
+                    self.setPixelColor(i+q, 0)
+
+    def wheel(self, pos):
+        """Generate rainbow colors across 0-255 positions."""
+        if pos < 85:
+            return Color(pos * 3, 255 - pos * 3, 0)
+        elif pos < 170:
+            pos -= 85
+            return Color(255 - pos * 3, 0, pos * 3)
+        else:
+            pos -= 170
+            return Color(0, pos * 3, 255 - pos * 3)
+
+    def rainbow(self, iterations=1):
+        """Draw rainbow that fades across all pixels at once."""
+        for j in range(256 * iterations):
+            for i in range(self.numPixels()):
+                self.setPixelColor(i, self.wheel((i+j) & 255))
+            self.show()
+            time.sleep(0.02)
+
+    def rainbowCycle(self, iterations=5):
+        """Draw rainbow that uniformly distributes itself across all pixels."""
+        for j in range(256 * iterations):
+            for i in range(self.numPixels()):
+                strip.setPixelColor(i, self.wheel((int(i * 256 / self.numPixels()) + j) & 255))
+            self.show()
+            time.sleep(0.02)
+
+    def theaterChaseRainbow(self):
+        """Rainbow movie theater light style chaser animation."""
+        for j in range(256):
+            for q in range(3):
+                for i in range(0, self.numPixels(), 3):
+                    self.setPixelColor(i+q, self.wheel((i+j) % 255))
+                self.show()
+                time.sleep(SLEEP)
+                for i in range(0, self.numPixels(), 3):
+                    self.setPixelColor(i+q, 0)
 
 
 class SIGINT_handler():
@@ -100,13 +149,40 @@ def colorize(args, value):
 
 def program1(strip):
 
-    green = Color(255, 0, 0) # rood
-    red = Color(0, 255, 0) # groen
-    blue = Color(0, 0, 255) # blauw
+    green = Color(127, 0, 0) # rood
+    red = Color(0, 127, 0) # groen
+    blue = Color(0, 0, 127) # blauw
 
     colors = [red, green, blue]
     
-    strip.cycle(colors)
+    strip.cycle(colors, times=3)
+
+def program2(strip):
+
+    green = Color(127, 0, 0) # rood
+    red = Color(0, 127, 0) # groen
+    blue = Color(0, 0, 127) # blauw
+    
+    strip.fill(red, walk=True)
+    strip.fill(green, walk=True)
+    strip.fill(blue, walk=True)
+
+def program3(strip):
+
+    white = Color(127, 127, 127)
+    strip.theaterChase(white)
+
+    red = Color(127, 0, 0)
+    strip.theaterChase(red)
+
+    blue = Color(0, 0, 127)
+    strip.theaterChase(blue)
+
+def program4(strip):
+
+    strip.rainbow()
+    strip.rainbowCycle()
+    strip.theaterChaseRainbow()
 
 
 def main(args):
@@ -183,9 +259,12 @@ def main(args):
     while True:
 
         program1(strip)
+        program2(strip)
+        program3(strip)
+        program4(strip)
 
         if signal_handler.SIGINT:
-            strip.clear()
+            strip.clear(walk=True)
             break
 
 
