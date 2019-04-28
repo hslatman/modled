@@ -115,7 +115,7 @@ def run_async_server():
 
     # TCP Server
 
-    StartTcpServer(context, identity=identity, address=("localhost", 502),
+    StartTcpServer(context, identity=identity, address=("0.0.0.0", 502),
                    custom_functions=[CustomModbusRequest])
 
     # TCP Server with deferred reactor run
