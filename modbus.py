@@ -88,13 +88,28 @@ def run_async_server():
     #     store = ModbusSlaveContext(..., zero_mode=True)
     # ----------------------------------------------------------------------- # 
     store = ModbusSlaveContext(
-        di=ModbusSequentialDataBlock(0, [17]*100),
-        co=ModbusSequentialDataBlock(0, [17]*100),
-        hr=ModbusSequentialDataBlock(0, [17]*100),
-        ir=ModbusSequentialDataBlock(0, [17]*100))
-    store.register(CustomModbusRequest.function_code, 'cm',
-                   ModbusSequentialDataBlock(0, [17] * 100))
+        #di=ModbusSequentialDataBlock(0, [17]*100),
+        #co=ModbusSequentialDataBlock(0, [17]*100),
+        hr=ModbusSequentialDataBlock(0, [18]*1)
+        #ir=ModbusSequentialDataBlock(0, [17]*100))
+    #store.register(CustomModbusRequest.function_code, 'cm',
+                   #ModbusSequentialDataBlock(0, [17] * 100)
+                   )
     context = ModbusServerContext(slaves=store, single=True)
+
+
+    # DI: functie 1; coil status (Modbus Doctor)?
+    # CO: Input status? COIL?
+    # HR: Holding Register
+    # IR: Input Register
+
+    # What are we doing here: set address value 0 (1 in Modbus Docter?)
+    # Holding Register starts at 40000. So, address 400001.
+    # 30000 is for Input Register.
+    #
+    # Examples include setting 100 * 17 in a list. These are 100 
+    # registers. On address 0, (1, 40001) there are 100 register
+    # values.
     
     # ----------------------------------------------------------------------- # 
     # initialize the server information
