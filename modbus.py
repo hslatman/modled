@@ -90,7 +90,7 @@ def run_async_server():
     store = ModbusSlaveContext(
         #di=ModbusSequentialDataBlock(0, [17]*100),
         #co=ModbusSequentialDataBlock(0, [17]*100),
-        hr=ModbusSequentialDataBlock(0, [18]*100)
+        hr=ModbusSequentialDataBlock(0, [18]*2)
         #ir=ModbusSequentialDataBlock(0, [17]*100))
     #store.register(CustomModbusRequest.function_code, 'cm',
                    #ModbusSequentialDataBlock(0, [17] * 100)
