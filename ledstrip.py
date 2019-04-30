@@ -43,15 +43,21 @@ class Ledstrip(Adafruit_NeoPixel):
         
         self.should_show = True
 
+    def clearShow(self):
+        super(Ledstrip, self).show()
+
     def show(self):
 
-        if self.should_show:
-            super(Ledstrip, self).show()
-        else:
-            self.clear(walk=True)
+        # if self.should_show:
+        #     super(Ledstrip, self).show()
+        # else:
+        #     self.clear(walk=True)
 
         if signal_handler.SIGINT:
             self.should_show = False
+
+        if not self.should_show:
+            self.clear(walk=True)
             
 
     def fill(self, color, walk=False, reverse=False):
@@ -69,12 +75,12 @@ class Ledstrip(Adafruit_NeoPixel):
         if walk:
             for index in range(self.numPixels()):
                 self.setPixelColor(index, CLEAR)
-                self.show()
+                self.clearShow()
                 time.sleep(SLEEP)
         else:
             for index in range(self.numPixels()):
                 self.setPixelColor(index, CLEAR)
-            self.show()
+            self.clearShow()
 
     def cycle(self, colors, times=1, sleep=1):
         # TODO: how long should one 'loop' take?
