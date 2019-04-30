@@ -56,9 +56,10 @@ class Ledstrip(Adafruit_NeoPixel):
         if signal_handler.SIGINT:
             self.should_show = False
 
-        if not self.should_show:
+        if self.should_show:
+            super(Ledstrip, self).show()
+        else:
             self.clear(walk=True)
-            
 
     def fill(self, color, walk=False, reverse=False):
         if walk:
