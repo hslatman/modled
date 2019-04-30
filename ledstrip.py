@@ -6,7 +6,7 @@ import time
 
 from rpi_ws281x import *
 
-LED_COUNT = 300
+LED_COUNT = 240
 LED_PIN = 18
 LED_FREQUENCE = 800000
 LED_DMA = 10
@@ -25,7 +25,24 @@ logger = logging.getLogger(__name__)
 
 from pymodbus.client.sync import ModbusTcpClient
 
+class SIGINT_handler():
+    def __init__(self):
+        self.SIGINT = False
+
+    def signal_handler(self, signal, frame):
+        print('Please wait for LEDs to turn off...')
+        self.SIGINT = True
+
+signal_handler = SIGINT_handler()
+signal.signal(signal.SIGINT, signal_handler.signal_handler)
+
 class Ledstrip(Adafruit_NeoPixel):
+
+    def show(self):
+        if signal_handler.SIGINT:
+            self.clear(walk=True)
+        else:
+            super(Ledstrip, self).show()
 
     def fill(self, color, walk=False, reverse=False):
         if walk:
@@ -111,17 +128,6 @@ class Ledstrip(Adafruit_NeoPixel):
                     self.setPixelColor(i+q, 0)
 
 
-class SIGINT_handler():
-    def __init__(self):
-        self.SIGINT = False
-
-    def signal_handler(self, signal, frame):
-        print('Please wait for LEDs to turn off...')
-        self.SIGINT = True
-
-signal_handler = SIGINT_handler()
-signal.signal(signal.SIGINT, signal_handler.signal_handler)
-
 # def colorize(args, value):
 #     #brightness = args.brightness
 #     #num_pixels = args.num_pixels
@@ -184,9 +190,14 @@ def program3(strip):
 def program4(strip):
 
     strip.rainbow()
-    strip.rainbowCycle()
-    strip.theaterChaseRainbow()
 
+def program5(strip):
+    
+    strip.rainbowCycle()
+
+def program6(strip):
+
+    strip.theaterChaseRainbow()
 
 def main(args):
     #print(args)
@@ -261,10 +272,12 @@ def main(args):
 
     while True:
 
-        program1(strip)
-        program2(strip)
+        #program1(strip)
+        #program2(strip)
         program3(strip)
         program4(strip)
+        program5(strip)
+        program6(strip)
 
         if signal_handler.SIGINT:
             strip.clear(walk=True)
