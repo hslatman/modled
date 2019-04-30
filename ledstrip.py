@@ -38,11 +38,21 @@ signal.signal(signal.SIGINT, signal_handler.signal_handler)
 
 class Ledstrip(Adafruit_NeoPixel):
 
+    def __init__(self, num, pin, freq_hz=800000, dma=10, invert=False, brightness=255, channel=0):
+        super(Ledstrip, self).__init__(num, pin, freq_hz, dma, invert, brightness, channel)
+        
+        self.should_show = True
+
     def show(self):
-        if signal_handler.SIGINT:
-            self.clear(walk=True)
-        else:
+
+        if self.should_show:
             super(Ledstrip, self).show()
+        else:
+            self.clear(walk=True)
+
+        if signal_handler.SIGINT:
+            self.should_show = False
+            
 
     def fill(self, color, walk=False, reverse=False):
         if walk:
