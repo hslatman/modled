@@ -48,11 +48,6 @@ class Ledstrip(Adafruit_NeoPixel):
 
     def show(self):
 
-        # if self.should_show:
-        #     super(Ledstrip, self).show()
-        # else:
-        #     self.clear(walk=True)
-
         if signal_handler.SIGINT:
             self.should_show = False
 
@@ -287,7 +282,7 @@ def main(args):
     strip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
     strip.begin()
 
-    while True:
+    while True and strip != None:
 
         #program1(strip)
         #program2(strip)
@@ -298,6 +293,7 @@ def main(args):
 
         if signal_handler.SIGINT:
             strip.clear(walk=True)
+            strip = None
             break
 
 
