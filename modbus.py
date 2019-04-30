@@ -90,7 +90,7 @@ def run_async_server():
     store = ModbusSlaveContext(
         #di=ModbusSequentialDataBlock(0, [17]*100),
         #co=ModbusSequentialDataBlock(0, [17]*100),
-        hr=ModbusSequentialDataBlock(0, [18]*2)
+        hr=ModbusSequentialDataBlock(0, [18]*3)
         #ir=ModbusSequentialDataBlock(0, [17]*100))
     #store.register(CustomModbusRequest.function_code, 'cm',
                    #ModbusSequentialDataBlock(0, [17] * 100)
@@ -110,6 +110,58 @@ def run_async_server():
     # Examples include setting 100 * 17 in a list. These are 100 
     # registers. On address 0, (1, 40001) there are 100 register
     # values.
+    #
+    # Register 'should' start at index 1 (40001), so example:
+    # hr=ModbusSequentialDataBlock(0, [18]*2) writes 18 at the 40001 position (and 40000?)
+    #
+    # Example write by Modbus Doctor
+    # Green little balls: bits (yes/no)
+    # Purple little balls: value of the entire register (16 bits) 
+    # 
+    # The green ones affect the values in the entire register
+    # 
+    # Bit 0: Ledstrip On/Off (40001.0)
+    # Bit 1: Ledstrip fixed color (40001.1)
+    #   If bit 1 is set, read the following addresses
+    #   40002: R; 40003: G; 40004: B;
+    #   So, reading continuously from the 40002, 3, 4; 
+    #   Update the values for RGB 'in the background'
+    #   Update the ledstrip when values change
+    # Bit 2: Activate rainbow (40001.2)
+    # Bit 3: Activate color mix / strandtest (40001.3)
+    # 40005: number of leds to use;
+    #   Only read at the start of ledstrip initialization
+    # 40006: brigtness to set
+    #   Only read at the start of ledstrip initialization
+    # 40007: LED pin (digital pin)
+    #   Only read at the start of ledstrip initialization
+    # Add handling of UNITs (devices, device addresses)
+    #   See https://github.com/riptideio/pymodbus/blob/master/examples/common/asynchronous_server.py#L77
+    #   Idea is to run 'multiple instances' of the ledstrip for different
+    #   contexts / hardware. The logic is exactly the same, only the
+    #   'database' of values stores is different.
+    # 40008: Which program should be active
+    #   Value 1, 2, 3, (etc)
+    #   1: fixed color, 2: rainbow, 3: color mix
+    #
+    # Look into CustomModbusRequest for handling data changes
+    #   See ModbusTcpServer.StartTCPServer logging functionality
+    #   Also see request.execute; https://github.com/riptideio/pymodbus/blob/13de8ab0a840d04b41cf53b9aaa98875d96ac5ec/pymodbus/server/async.py#L58
+    #   Framer, decoder, custom_functions, custom messages
+    #   https://github.com/riptideio/pymodbus/blob/2ef91e9e565b10fc9abc0840c87cf4a29f3d9bbf/pymodbus/server/asynchronous.py#L233
+    #
+    # Proposed solution: create LedstripRequest, extending ModbusRequest
+    # Override the default function code (3), register the LedstripRequest,
+    # override the execute funtion to react to specific data changes on specific
+    # addresses, store data from the changed data from registers in local variables
+    # update the ledstrip code to lookup values from local variables and react to 
+    # changes
+    #
+    # Bit values are on/off; react to on/off states. Toggle function.
+    # No function active: ledstip should shutdown
+    # 
+
+
     
     # ----------------------------------------------------------------------- # 
     # initialize the server information
