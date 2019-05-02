@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import logging
 import signal
 import sys
@@ -23,12 +24,23 @@ handler.setFormatter(formatter)
 logging.basicConfig(level=logging.DEBUG, handlers=[handler])
 logger = logging.getLogger(__name__)
 
+class LedstripSignalSender(object):
+    pass
+
+class LedstripException(Exception):
+    pass
+
 class Ledstrip(Adafruit_NeoPixel):
 
     def __init__(self, num, pin, freq_hz=800000, dma=10, invert=False, brightness=255, channel=0):
         super(Ledstrip, self).__init__(num, pin, freq_hz, dma, invert, brightness, channel)
         
         self.should_continue = True
+
+    @asyncio.coroutine
+    def trigger_switch(self, sender, should_switch):
+        if should_switch:
+            raise LedstripException()
 
     def show(self):
 
@@ -197,21 +209,34 @@ class SIGINT_handler():
     def signal_handler(self, signal, frame):
         print('Please wait for LEDs to turn off...')
         self.SIGINT = True
+        should_switch.dispatch(sender=LedstripSignalSender, should_switch=True)
 
 signal_handler = SIGINT_handler()
 signal.signal(signal.SIGINT, signal_handler.signal_handler)
 
+
+from signals import Signal
+should_switch = Signal(arguments=['should_switch'])
+
+should_switch.connect(sender=LedstripSignalSender, receiver=Ledstrip.trigger_switch)
+
 class SwitchableLedstrip(object):
     def __init__(self):
         super(SwitchableLedstrip, self).__init__()
-        self.ledstrip = None
+        self.ledstrip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
 
     def start(self):
         logger.debug('starting')
+        self.ledstrip.begin()
         while True:
-            if signal_handler.SIGINT:
-                #strip.clear(walk=True)
+            try:
+                blue = Color(0, 0, 127)
+                self.ledstrip.theaterChase(blue)
+            except LedstripException as e:
+                logger.debug(e)
                 break
+
+                # TODO: read what we should do; then reinitialize and continue?
 
         self.stop()
     
