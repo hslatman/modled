@@ -20,7 +20,7 @@ SLEEP=50/1000 # 50 milliseconds
 handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)-20s - %(levelname)-16s - %(message)s')
 handler.setFormatter(formatter)
-logging.basicConfig(level=logging.INFO, handlers=[handler])
+logging.basicConfig(level=logging.DEBUG, handlers=[handler])
 logger = logging.getLogger(__name__)
 
 class Ledstrip(Adafruit_NeoPixel):
@@ -207,10 +207,16 @@ class SwitchableLedstrip(object):
         self.ledstrip = None
 
     def start(self):
-        pass
+        logger.debug('starting')
+        while True:
+            if signal_handler.SIGINT:
+                #strip.clear(walk=True)
+                break
+
+        self.stop()
     
     def stop(self):
-        pass
+        logger.debug('stopping')
 
 
 def main(args):
