@@ -250,8 +250,9 @@ class SwitchableLedstrip(object):
         self.stop()
     
     def stop(self):
-        self.ledstrip.clear(walk=True)
+        
         logger.debug('stopping')
+        self.ledstrip.clear(walk=True)
 
 
 def main(args):
