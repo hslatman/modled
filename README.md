@@ -22,3 +22,4 @@ The ones that are included in the repository have been adapted slightly
 * Toggling programs on/off
 * Improvement for closing the ledstrip: immediate action upon ending program by checking enabled/disabled value before showing the ledstrip again.
 * Initialization of Ledstrip from a Modbus command?
+* Smooth program switches?
