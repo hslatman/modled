@@ -212,10 +212,13 @@ def program6(strip):
 
     strip.theaterChaseRainbow()
 
+from signals import Signal
+switch = Signal(providing_args=['switch'])
+
 class SIGINT_handler():
-    def __init__(self, ledstrip):
+    def __init__(self):
         self.SIGINT = False
-        self.ledstrip = ledstrip
+        #self.ledstrip = ledstrip
 
     def signal_handler(self, signal, frame):
         logger.debug('signal received')
@@ -223,20 +226,22 @@ class SIGINT_handler():
             logger.debug('triggering switch')
             # only trigger it once, for now
             self.SIGINT = True
-            self.ledstrip.triggerSwitch()
+            #self.ledstrip.triggerSwitch()
+            switch.send(sender=self.__class__, switch=True)
 
     def reset(self):
         logger.debug('resetting signal handler')
         self.SIGINT = False
-
 
 class SwitchableLedstrip(object):
     def __init__(self):
         super(SwitchableLedstrip, self).__init__()
         self.ledstrip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
 
-        self.signal_handler = SIGINT_handler(self.ledstrip)
+        self.signal_handler = SIGINT_handler()
         signal.signal(signal.SIGINT, self.signal_handler.signal_handler)
+
+        switch.connect(ledstrip.triggerSwitch)
 
     def start(self):
         logger.debug('starting')
