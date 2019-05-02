@@ -231,14 +231,15 @@ class SwitchableLedstrip(object):
 
     def start(self):
         logger.debug('starting')
+        should_continue = True
         self.ledstrip.begin()
-        while True:
+        while True and should_continue:
             try:
                 blue = Color(0, 0, 127)
                 self.ledstrip.theaterChase(blue)
             except LedstripException as e:
                 logger.debug(e)
-                break
+                should_continue = False
 
                 # TODO: read what we should do; then reinitialize and continue?
 
