@@ -237,10 +237,10 @@ class SwitchableLedstrip(object):
         self.ledstrip.begin()
         while True and should_continue < max_count: # NOTE: we loop 3 times for debugging.
             try:
-                program3(strip)
-                program4(strip)
-                program5(strip)
-                program6(strip)
+                program3(self.ledstrip)
+                program4(self.ledstrip)
+                program5(self.ledstrip)
+                program6(self.ledstrip)
             except LedstripSwitchException as e:
                 logger.debug(e)
                 should_continue += 1
@@ -332,23 +332,6 @@ def main(args):
     #        pass
 
     #    time.sleep(1)
-
-    # strip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
-    # strip.begin()
-
-    # while True and strip != None:
-
-    #     #program1(strip)
-    #     #program2(strip)
-    #     program3(strip)
-    #     program4(strip)
-    #     program5(strip)
-    #     program6(strip)
-
-    #     if signal_handler.SIGINT:
-    #         strip.clear(walk=True)
-    #         strip = None
-    #         break
 
     strip = SwitchableLedstrip()
     strip.start()
