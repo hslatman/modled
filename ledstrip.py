@@ -241,7 +241,7 @@ class SwitchableLedstrip(object):
         self.signal_handler = SIGINT_handler()
         signal.signal(signal.SIGINT, self.signal_handler.signal_handler)
 
-        switch.connect(ledstrip.triggerSwitch)
+        switch.connect(self.ledstrip.triggerSwitch)
 
     def start(self):
         logger.debug('starting')
