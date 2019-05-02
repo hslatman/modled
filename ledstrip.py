@@ -49,7 +49,7 @@ class Ledstrip(Adafruit_NeoPixel):
     #         self.should_continue = False
     #         raise LedstripException()
 
-    def triggerSwitch(self):
+    def triggerSwitch(self, sender, **kwargs):
         raise LedstripException()
 
     def show(self):
@@ -227,7 +227,7 @@ class SIGINT_handler():
             # only trigger it once, for now
             self.SIGINT = True
             #self.ledstrip.triggerSwitch()
-            switch.send(self.__class__, switch=True)
+            switch.send(sender=self.__class__, switch=True)
 
     def reset(self):
         logger.debug('resetting signal handler')
