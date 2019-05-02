@@ -37,6 +37,7 @@ class Ledstrip(Adafruit_NeoPixel):
         self.should_continue = True
 
     def triggerSwitch(self, sender, **kwargs):
+        # NOTE: we're not doing anything with sender nor the available kwargs; could be an improvement
         raise LedstripSwitchException('Triggered LedstripSwitchException')
 
     def show(self):
