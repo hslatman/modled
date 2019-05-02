@@ -60,6 +60,7 @@ class Ledstrip(Adafruit_NeoPixel):
     @asyncio.coroutine
     def trigger_switch(self, sender, should_switch):
         if should_switch:
+            self.should_continue = False
             raise LedstripException()
 
     def show(self):
