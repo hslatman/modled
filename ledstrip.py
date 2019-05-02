@@ -238,7 +238,7 @@ class SwitchableLedstrip(object):
             try:
                 blue = Color(0, 0, 127)
                 self.ledstrip.theaterChase(blue)
-            except LedstripException as e:
+            except LedstripSwitchException as e:
                 logger.debug(e)
                 should_continue += 1
 
@@ -248,6 +248,9 @@ class SwitchableLedstrip(object):
                 self.signal_handler.reset()
 
                 # TODO: read what we should do; then reinitialize, set the right settings, the right program and continue.
+                # TODO: instead of (just) reacting to the SIGINT signal, we should use the switch signal, and perhaps
+                # some other signals (to be defined) to react to changes from other systems, such as the internal Modbus server (to be implemented)
+
 
         # NOTE: we're quitting just to be sure.
         self.stop()
