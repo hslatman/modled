@@ -86,7 +86,6 @@ class Signal(object):
         if version < (3, 7):
             loop = asyncio.get_event_loop()
             loop.run_until_complete(asyncio.wait(tasks))
-            loop.close()
         else:
             [asyncio.run(task) for task in tasks]
         
