@@ -227,7 +227,7 @@ class SIGINT_handler():
             # only trigger it once, for now
             self.SIGINT = True
             #self.ledstrip.triggerSwitch()
-            switch.send(sender=self.__class__, switch=True)
+            switch.send(self.__class__, switch=True)
 
     def reset(self):
         logger.debug('resetting signal handler')
