@@ -23,38 +23,17 @@ handler.setFormatter(formatter)
 logging.basicConfig(level=logging.INFO, handlers=[handler])
 logger = logging.getLogger(__name__)
 
-from pymodbus.client.sync import ModbusTcpClient
-
-class SIGINT_handler():
-    def __init__(self):
-        self.SIGINT = False
-
-    def signal_handler(self, signal, frame):
-        print('Please wait for LEDs to turn off...')
-        self.SIGINT = True
-
-signal_handler = SIGINT_handler()
-signal.signal(signal.SIGINT, signal_handler.signal_handler)
-
 class Ledstrip(Adafruit_NeoPixel):
 
     def __init__(self, num, pin, freq_hz=800000, dma=10, invert=False, brightness=255, channel=0):
         super(Ledstrip, self).__init__(num, pin, freq_hz, dma, invert, brightness, channel)
         
-        self.should_show = True
-
-    def clearShow(self):
-        super(Ledstrip, self).show()
+        self.should_continue = True
 
     def show(self):
 
-        if signal_handler.SIGINT:
-            self.should_show = False
-
-        if self.should_show:
+        if self.should_continue:
             super(Ledstrip, self).show()
-        else:
-            self.clear(walk=True)
 
     def fill(self, color, walk=False, reverse=False):
         if walk:
@@ -71,12 +50,12 @@ class Ledstrip(Adafruit_NeoPixel):
         if walk:
             for index in range(self.numPixels()):
                 self.setPixelColor(index, CLEAR)
-                self.clearShow()
+                self.show()
                 time.sleep(SLEEP)
         else:
             for index in range(self.numPixels()):
                 self.setPixelColor(index, CLEAR)
-            self.clearShow()
+            self.show()
 
     def cycle(self, colors, times=1, sleep=1):
         # TODO: how long should one 'loop' take?
@@ -211,6 +190,29 @@ def program6(strip):
 
     strip.theaterChaseRainbow()
 
+class SIGINT_handler():
+    def __init__(self):
+        self.SIGINT = False
+
+    def signal_handler(self, signal, frame):
+        print('Please wait for LEDs to turn off...')
+        self.SIGINT = True
+
+signal_handler = SIGINT_handler()
+signal.signal(signal.SIGINT, signal_handler.signal_handler)
+
+class SwitchableLedstrip(object):
+    def __init__(self):
+        super(SwitchableLedstrip, self).__init__()
+        self.ledstrip = None
+
+    def start(self):
+        pass
+    
+    def stop(self):
+        pass
+
+
 def main(args):
     #print(args)
 
@@ -279,22 +281,25 @@ def main(args):
 
     #    time.sleep(1)
 
-    strip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
-    strip.begin()
+    # strip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
+    # strip.begin()
 
-    while True and strip != None:
+    # while True and strip != None:
 
-        #program1(strip)
-        #program2(strip)
-        program3(strip)
-        program4(strip)
-        program5(strip)
-        program6(strip)
+    #     #program1(strip)
+    #     #program2(strip)
+    #     program3(strip)
+    #     program4(strip)
+    #     program5(strip)
+    #     program6(strip)
 
-        if signal_handler.SIGINT:
-            strip.clear(walk=True)
-            strip = None
-            break
+    #     if signal_handler.SIGINT:
+    #         strip.clear(walk=True)
+    #         strip = None
+    #         break
+
+    strip = SwitchableLedstrip()
+    strip.start()
 
 
 if __name__ == '__main__':
