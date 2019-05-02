@@ -218,11 +218,16 @@ class SIGINT_handler():
         self.ledstrip = ledstrip
 
     def signal_handler(self, signal, frame):
-        print('Please wait for LEDs to turn off...')
-        self.SIGINT = True
-        #should_switch.dispatch(sender=LedstripSignalSender, should_switch=True)
-        self.ledstrip.triggerSwitch()
+        logger.debug('signal received')
+        if not self.SIGINT:
+            logger.debug('triggering switch')
+            # only trigger it once, for now
+            self.SIGINT = True
+            self.ledstrip.triggerSwitch()
 
+    def reset(self):
+        logger.debug('resetting signal handler')
+        self.SIGINT = False
 
 
 class SwitchableLedstrip(object):
@@ -230,20 +235,24 @@ class SwitchableLedstrip(object):
         super(SwitchableLedstrip, self).__init__()
         self.ledstrip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
 
-        signal_handler = SIGINT_handler(self.ledstrip)
-        signal.signal(signal.SIGINT, signal_handler.signal_handler)
+        self.signal_handler = SIGINT_handler(self.ledstrip)
+        signal.signal(signal.SIGINT, self.signal_handler.signal_handler)
 
     def start(self):
         logger.debug('starting')
-        should_continue = True
+        should_continue = 0
         self.ledstrip.begin()
-        while True and should_continue:
+        while True and should_continue < 3:
             try:
                 blue = Color(0, 0, 127)
                 self.ledstrip.theaterChase(blue)
             except LedstripException as e:
                 logger.debug(e)
-                should_continue = False
+                should_continue += 1
+
+                logger.debug(should_continue)
+                self.signal_handler.reset()
+
 
                 # TODO: read what we should do; then reinitialize and continue?
 
@@ -252,7 +261,7 @@ class SwitchableLedstrip(object):
     def stop(self):
         
         logger.debug('stopping')
-        self.ledstrip.clear(walk=True)
+        self.ledstrip.clear()
 
 
 def main(args):
