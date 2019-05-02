@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import logging
 import signal
 import sys
@@ -6,7 +7,7 @@ import time
 
 from rpi_ws281x import *
 
-LED_COUNT = 300
+LED_COUNT = 240
 LED_PIN = 18
 LED_FREQUENCE = 800000
 LED_DMA = 10
@@ -20,12 +21,28 @@ SLEEP=50/1000 # 50 milliseconds
 handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)-20s - %(levelname)-16s - %(message)s')
 handler.setFormatter(formatter)
-logging.basicConfig(level=logging.INFO, handlers=[handler])
+logging.basicConfig(level=logging.DEBUG, handlers=[handler])
 logger = logging.getLogger(__name__)
 
-from pymodbus.client.sync import ModbusTcpClient
+class LedstripSignalSender(object):
+    pass
+
+class LedstripSwitchException(Exception):
+    pass
 
 class Ledstrip(Adafruit_NeoPixel):
+
+    def __init__(self, num, pin, freq_hz=800000, dma=10, invert=False, brightness=255, channel=0):
+        super(Ledstrip, self).__init__(num, pin, freq_hz, dma, invert, brightness, channel)
+        self.should_continue = True
+
+    def triggerSwitch(self, sender, **kwargs):
+        raise LedstripSwitchException('Triggered LedstripSwitchException')
+
+    def show(self):
+        # NOTE: currently we're doing nothing special here.
+        if self.should_continue:
+            super(Ledstrip, self).show()
 
     def fill(self, color, walk=False, reverse=False):
         if walk:
@@ -111,17 +128,6 @@ class Ledstrip(Adafruit_NeoPixel):
                     self.setPixelColor(i+q, 0)
 
 
-class SIGINT_handler():
-    def __init__(self):
-        self.SIGINT = False
-
-    def signal_handler(self, signal, frame):
-        print('Please wait for LEDs to turn off...')
-        self.SIGINT = True
-
-signal_handler = SIGINT_handler()
-signal.signal(signal.SIGINT, signal_handler.signal_handler)
-
 # def colorize(args, value):
 #     #brightness = args.brightness
 #     #num_pixels = args.num_pixels
@@ -184,8 +190,79 @@ def program3(strip):
 def program4(strip):
 
     strip.rainbow()
+
+def program5(strip):
+    
     strip.rainbowCycle()
+
+def program6(strip):
+
     strip.theaterChaseRainbow()
+
+from signals.signals import Signal
+switch = Signal(providing_args=['switch'])
+
+class SIGINT_handler():
+    def __init__(self):
+        self.SIGINT = False
+
+    def signal_handler(self, signal, frame):
+        logger.debug('signal received')
+        if not self.SIGINT:
+            logger.debug('triggering switch')
+            self.SIGINT = True
+            switch.send(sender=LedstripSignalSender, switch=True)
+
+    def reset(self):
+        logger.debug('resetting signal handler')
+        self.SIGINT = False
+
+class SwitchableLedstrip(object):
+    def __init__(self):
+        super(SwitchableLedstrip, self).__init__()
+        self.ledstrip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
+
+        # NOTE: we register the SIGINT signal to be handled by SIGINT_handler
+        # This means that whenever we get a SIGINT, termination will be handled by the signal_handler function
+        self.signal_handler = SIGINT_handler()
+        signal.signal(signal.SIGINT, self.signal_handler.signal_handler)
+
+        # NOTE: we connect the switch signal to the triggerSwitch in ledstrip
+        switch.connect(self.ledstrip.triggerSwitch)
+
+    def start(self):
+        logger.debug('starting')
+        should_continue = 0
+        max_count = 10
+        self.ledstrip.begin()
+        while True and should_continue < max_count: # NOTE: we loop 3 times for debugging.
+            try:
+                program3(self.ledstrip)
+                program4(self.ledstrip)
+                program5(self.ledstrip)
+                program6(self.ledstrip)
+            except LedstripSwitchException as e:
+                logger.debug(e)
+                should_continue += 1
+
+                logger.debug(should_continue)
+
+                # NOTE: we reset the signal_handler, such that we can trigger again
+                self.signal_handler.reset()
+
+                # TODO: read what we should do; then reinitialize, set the right settings, the right program and continue.
+                # TODO: instead of (just) reacting to the SIGINT signal, we should use the switch signal, and perhaps
+                # some other signals (to be defined) to react to changes from other systems, such as the internal Modbus server (to be implemented)
+                # TODO: instead of a hard switch between the programs, can we define some way to make it switch smoothly?
+                # perhaps using some fade mechanism, first clearing everything and then starting, etc.
+
+        # NOTE: we're quitting just to be sure.
+        self.stop()
+    
+    def stop(self):
+        
+        logger.debug('stopping')
+        self.ledstrip.clear()
 
 
 def main(args):
@@ -256,19 +333,8 @@ def main(args):
 
     #    time.sleep(1)
 
-    strip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
-    strip.begin()
-
-    while True:
-
-        program1(strip)
-        program2(strip)
-        program3(strip)
-        program4(strip)
-
-        if signal_handler.SIGINT:
-            strip.clear(walk=True)
-            break
+    strip = SwitchableLedstrip()
+    strip.start()
 
 
 if __name__ == '__main__':
