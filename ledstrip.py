@@ -24,22 +24,8 @@ handler.setFormatter(formatter)
 logging.basicConfig(level=logging.DEBUG, handlers=[handler])
 logger = logging.getLogger(__name__)
 
-class SIGINT_handler():
-    def __init__(self):
-        self.SIGINT = False
-
-    def signal_handler(self, signal, frame):
-        print('Please wait for LEDs to turn off...')
-        self.SIGINT = True
-        should_switch.dispatch(sender=LedstripSignalSender, should_switch=True)
-
-signal_handler = SIGINT_handler()
-signal.signal(signal.SIGINT, signal_handler.signal_handler)
-
-
-from signals import Signal
-should_switch = Signal(arguments=['should_switch'])
-
+#from signals import Signal
+#should_switch = Signal(arguments=['should_switch'])
 
 class LedstripSignalSender(object):
     pass
@@ -54,14 +40,17 @@ class Ledstrip(Adafruit_NeoPixel):
         
         self.should_continue = True
 
-        should_switch.connect(sender=LedstripSignalSender, receiver=self.trigger_switch)
+        #should_switch.connect(sender=LedstripSignalSender, receiver=self.trigger_switch)
 
 
-    @asyncio.coroutine
-    def trigger_switch(self, sender, should_switch):
-        if should_switch:
-            self.should_continue = False
-            raise LedstripException()
+    # @asyncio.coroutine
+    # def trigger_switch(self, sender, should_switch):
+    #     if should_switch:
+    #         self.should_continue = False
+    #         raise LedstripException()
+
+    def triggerSwitch(self):
+        raise LedstripException()
 
     def show(self):
 
@@ -223,11 +212,26 @@ def program6(strip):
 
     strip.theaterChaseRainbow()
 
+class SIGINT_handler():
+    def __init__(self, ledstrip):
+        self.SIGINT = False
+        self.ledstrip = ledstrip
+
+    def signal_handler(self, signal, frame):
+        print('Please wait for LEDs to turn off...')
+        self.SIGINT = True
+        #should_switch.dispatch(sender=LedstripSignalSender, should_switch=True)
+        self.ledstrip.triggerSwitch()
+
+
 
 class SwitchableLedstrip(object):
     def __init__(self):
         super(SwitchableLedstrip, self).__init__()
         self.ledstrip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
+
+        signal_handler = SIGINT_handler(self.ledstrip)
+        signal.signal(signal.SIGINT, signal_handler.signal_handler)
 
     def start(self):
         logger.debug('starting')
