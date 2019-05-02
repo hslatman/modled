@@ -199,7 +199,7 @@ def program6(strip):
 
     strip.theaterChaseRainbow()
 
-from signals import Signal
+from signals.signals import Signal
 switch = Signal(providing_args=['switch'])
 
 class SIGINT_handler():

@@ -1,3 +1,7 @@
+# NOTE: the implementation of the Signal class was taken from django/signals
+# The required dependencies from the django/signals repository and unnecessary
+# dependencies have been copied verbatim or removed from this file.
+
 import threading
 import weakref
 
