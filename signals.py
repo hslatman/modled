@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 class SignalError(Exception):
     pass
@@ -81,5 +82,11 @@ class Signal(object):
             receiver(**arguments) for receiver in receivers
         ]
 
-        return [asyncio.run(task) for task in tasks]
+        version = sys.version_info
+        if version < (3, 7):
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(asyncio.wait(tasks))
+            loop.close()
+        else:
+            [asyncio.run(task) for task in tasks]
         
