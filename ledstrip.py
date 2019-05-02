@@ -24,6 +24,23 @@ handler.setFormatter(formatter)
 logging.basicConfig(level=logging.DEBUG, handlers=[handler])
 logger = logging.getLogger(__name__)
 
+class SIGINT_handler():
+    def __init__(self):
+        self.SIGINT = False
+
+    def signal_handler(self, signal, frame):
+        print('Please wait for LEDs to turn off...')
+        self.SIGINT = True
+        should_switch.dispatch(sender=LedstripSignalSender, should_switch=True)
+
+signal_handler = SIGINT_handler()
+signal.signal(signal.SIGINT, signal_handler.signal_handler)
+
+
+from signals import Signal
+should_switch = Signal(arguments=['should_switch'])
+
+
 class LedstripSignalSender(object):
     pass
 
@@ -36,6 +53,9 @@ class Ledstrip(Adafruit_NeoPixel):
         super(Ledstrip, self).__init__(num, pin, freq_hz, dma, invert, brightness, channel)
         
         self.should_continue = True
+
+        should_switch.connect(sender=LedstripSignalSender, receiver=self.trigger_switch)
+
 
     @asyncio.coroutine
     def trigger_switch(self, sender, should_switch):
@@ -202,23 +222,6 @@ def program6(strip):
 
     strip.theaterChaseRainbow()
 
-class SIGINT_handler():
-    def __init__(self):
-        self.SIGINT = False
-
-    def signal_handler(self, signal, frame):
-        print('Please wait for LEDs to turn off...')
-        self.SIGINT = True
-        should_switch.dispatch(sender=LedstripSignalSender, should_switch=True)
-
-signal_handler = SIGINT_handler()
-signal.signal(signal.SIGINT, signal_handler.signal_handler)
-
-
-from signals import Signal
-should_switch = Signal(arguments=['should_switch'])
-
-should_switch.connect(sender=LedstripSignalSender, receiver=Ledstrip.trigger_switch)
 
 class SwitchableLedstrip(object):
     def __init__(self):
@@ -241,6 +244,7 @@ class SwitchableLedstrip(object):
         self.stop()
     
     def stop(self):
+        self.ledstrip.clear(walk=True)
         logger.debug('stopping')
 
 
