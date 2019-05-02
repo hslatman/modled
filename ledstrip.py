@@ -24,36 +24,23 @@ handler.setFormatter(formatter)
 logging.basicConfig(level=logging.DEBUG, handlers=[handler])
 logger = logging.getLogger(__name__)
 
-#from signals import Signal
-#should_switch = Signal(arguments=['should_switch'])
-
 class LedstripSignalSender(object):
     pass
 
-class LedstripException(Exception):
+class LedstripSwitchException(Exception):
     pass
 
 class Ledstrip(Adafruit_NeoPixel):
 
     def __init__(self, num, pin, freq_hz=800000, dma=10, invert=False, brightness=255, channel=0):
         super(Ledstrip, self).__init__(num, pin, freq_hz, dma, invert, brightness, channel)
-        
         self.should_continue = True
 
-        #should_switch.connect(sender=LedstripSignalSender, receiver=self.trigger_switch)
-
-
-    # @asyncio.coroutine
-    # def trigger_switch(self, sender, should_switch):
-    #     if should_switch:
-    #         self.should_continue = False
-    #         raise LedstripException()
-
     def triggerSwitch(self, sender, **kwargs):
-        raise LedstripException()
+        raise LedstripSwitchException('Triggered LedstripSwitchException')
 
     def show(self):
-
+        # NOTE: currently we're doing nothing special here.
         if self.should_continue:
             super(Ledstrip, self).show()
 
@@ -218,16 +205,13 @@ switch = Signal(providing_args=['switch'])
 class SIGINT_handler():
     def __init__(self):
         self.SIGINT = False
-        #self.ledstrip = ledstrip
 
     def signal_handler(self, signal, frame):
         logger.debug('signal received')
         if not self.SIGINT:
             logger.debug('triggering switch')
-            # only trigger it once, for now
             self.SIGINT = True
-            #self.ledstrip.triggerSwitch()
-            switch.send(sender=self.__class__, switch=True)
+            switch.send(sender=LedstripSignalSender, switch=True)
 
     def reset(self):
         logger.debug('resetting signal handler')
@@ -238,16 +222,19 @@ class SwitchableLedstrip(object):
         super(SwitchableLedstrip, self).__init__()
         self.ledstrip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
 
+        # NOTE: we register the SIGINT signal to be handled by SIGINT_handler
+        # This means that whenever we get a SIGINT, termination will be handled by the signal_handler function
         self.signal_handler = SIGINT_handler()
         signal.signal(signal.SIGINT, self.signal_handler.signal_handler)
 
+        # NOTE: we connect the switch signal to the triggerSwitch in ledstrip
         switch.connect(self.ledstrip.triggerSwitch)
 
     def start(self):
         logger.debug('starting')
         should_continue = 0
         self.ledstrip.begin()
-        while True and should_continue < 3:
+        while True and should_continue < 3: # NOTE: we loop 3 times for debugging.
             try:
                 blue = Color(0, 0, 127)
                 self.ledstrip.theaterChase(blue)
@@ -256,11 +243,13 @@ class SwitchableLedstrip(object):
                 should_continue += 1
 
                 logger.debug(should_continue)
+
+                # NOTE: we reset the signal_handler, such that we can trigger again
                 self.signal_handler.reset()
 
+                # TODO: read what we should do; then reinitialize, set the right settings, the right program and continue.
 
-                # TODO: read what we should do; then reinitialize and continue?
-
+        # NOTE: we're quitting just to be sure.
         self.stop()
     
     def stop(self):
