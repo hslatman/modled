@@ -233,11 +233,14 @@ class SwitchableLedstrip(object):
     def start(self):
         logger.debug('starting')
         should_continue = 0
+        max_count = 10
         self.ledstrip.begin()
-        while True and should_continue < 3: # NOTE: we loop 3 times for debugging.
+        while True and should_continue < max_count: # NOTE: we loop 3 times for debugging.
             try:
-                blue = Color(0, 0, 127)
-                self.ledstrip.theaterChase(blue)
+                program3(strip)
+                program4(strip)
+                program5(strip)
+                program6(strip)
             except LedstripSwitchException as e:
                 logger.debug(e)
                 should_continue += 1
@@ -250,7 +253,8 @@ class SwitchableLedstrip(object):
                 # TODO: read what we should do; then reinitialize, set the right settings, the right program and continue.
                 # TODO: instead of (just) reacting to the SIGINT signal, we should use the switch signal, and perhaps
                 # some other signals (to be defined) to react to changes from other systems, such as the internal Modbus server (to be implemented)
-
+                # TODO: instead of a hard switch between the programs, can we define some way to make it switch smoothly?
+                # perhaps using some fade mechanism, first clearing everything and then starting, etc.
 
         # NOTE: we're quitting just to be sure.
         self.stop()
