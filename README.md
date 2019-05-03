@@ -15,11 +15,13 @@ The ones that are included in the repository have been adapted slightly
 
 ## TODO
 
+* Add Modbus server and logic for initializing the strip.
 * Add Modbus server and logic for updating the strip.
 * React to data changes on registers (parse data, hex to int, etc)
-* Modbus configuration of Ledstrip (initial)
 * Continuous reconfiguration of program and color settings
 * Toggling programs on/off
 * Improvement for closing the ledstrip: immediate action upon ending program by checking enabled/disabled value before showing the ledstrip again.
 * Initialization of Ledstrip from a Modbus command?
-* Smooth program switches?
+* Smooth ledstrip program switches?
+* Smooth script kills, restarts, etc. Should we properly daemonize it?
+* Add configuration parameters for the Modbus server, e.g. host, port?
