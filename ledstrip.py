@@ -32,19 +32,6 @@ class LedstripSwitchException(Exception):
 
 class Ledstrip(Adafruit_NeoPixel):
 
-    def __init__(self, num, pin, freq_hz=800000, dma=10, invert=False, brightness=255, channel=0):
-        super(Ledstrip, self).__init__(num, pin, freq_hz, dma, invert, brightness, channel)
-        self.should_continue = True
-
-    def triggerSwitch(self, sender, **kwargs):
-        # NOTE: we're not doing anything with sender nor the available kwargs; could be an improvement
-        raise LedstripSwitchException('Triggered LedstripSwitchException')
-
-    def show(self):
-        # NOTE: currently we're doing nothing special here.
-        if self.should_continue:
-            super(Ledstrip, self).show()
-
     def fill(self, color, walk=False, reverse=False):
         if walk:
             for index in range(self.numPixels()):
@@ -218,10 +205,20 @@ class SIGINT_handler():
         logger.debug('resetting signal handler')
         self.SIGINT = False
 
-class SwitchableLedstrip(object):
+
+class SwitchableLedstrip(Ledstrip):
+    def __init__(self, num, pin, freq_hz=800000, dma=10, invert=False, brightness=255, channel=0):
+        super(SwitchableLedstrip, self).__init(num, pin, freq_hz, dma, invert, brightness, channel)
+
+    def triggerSwitch(self, sender, **kwargs):
+        # NOTE: we're not doing anything with sender nor the available kwargs; could be an improvement
+        raise LedstripSwitchException('Triggered LedstripSwitchException')
+
+
+class Wrapper(object):
     def __init__(self):
-        super(SwitchableLedstrip, self).__init__()
-        self.ledstrip = Ledstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
+        #super(SwitchableLedstrip, self).__init__()
+        self.ledstrip = SwitchableLedstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
 
         # NOTE: we register the SIGINT signal to be handled by SIGINT_handler
         # This means that whenever we get a SIGINT, termination will be handled by the signal_handler function
@@ -267,74 +264,8 @@ class SwitchableLedstrip(object):
 
 
 def main(args):
-    #print(args)
-
-    #host = args.host
-    #port = args.port
-    #unit = args.unit
-
-    # TODO: logica voor verbinden
-    #client = ModbusTcpClient(host, port)
-
-    # NOTE: verbindt de client met de server
-    #client.connect()
-
-
-
-
-    #loop = 0
-
-    #while True:
-
-    #    color = colors[int(loop % 3)]
-
-        #for index in range(LEDCOUNT):
-        #    strip.setPixelColor(index, color)
-        #    strip.show()
-
-    #    strip.fill(color)
-    #    strip.show()
-
-    #    time.sleep(1)
-
-    #    loop += 1
-
-    #   if signal_handler.SIGINT:
-    #        strip.clear()
-    #        strip.show()
-    #        break
-
-    #while True:
-
-    #    try:
-            # NOTE: hier wellicht read_coils index aanpassen?
-            # De read_coils doet volgens mij ook een connect() elke keer een connect()
-            #result = client.read_coils(1, 1, unit=unit)
-
-            # NOTE: hier wordt het eerste bit op index 0 van het resultaat ingeladen; wellicht aanpassen
-            #value = result.bits[0]
-    #        value = 0
-
-            # NOTE: alternatief lezen van discrete inputs?
-            #result = client.read_discrete_inputs(0, 8, unit=unit)
-
-            # NOTE: alternatief lezen van een holding register?
-            #result = client.read_holding_registers(1, 1, unit=unit)
-            #value = result.registers[0]
-
-            # NOTE: meer voorbeelden: https://github.com/riptideio/pymodbus/blob/master/examples/common/synchronous_client.py
-        
-    #        colorize(args, value)
-
-    #        client.close()
-
-    #    except:
-            # NOTE: we doen niks om de fout op te vangen; we gaan gewoon door.
-    #        pass
-
-    #    time.sleep(1)
-
-    strip = SwitchableLedstrip()
+    
+    strip = Wrapper()
     strip.start()
 
 
