@@ -208,7 +208,7 @@ class SIGINT_handler():
 
 class SwitchableLedstrip(Ledstrip):
     def __init__(self, num, pin, freq_hz=800000, dma=10, invert=False, brightness=255, channel=0):
-        super(SwitchableLedstrip, self).__init(num, pin, freq_hz, dma, invert, brightness, channel)
+        super(SwitchableLedstrip, self).__init__(num, pin, freq_hz, dma, invert, brightness, channel)
 
     def triggerSwitch(self, sender, **kwargs):
         # NOTE: we're not doing anything with sender nor the available kwargs; could be an improvement
