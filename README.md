@@ -25,3 +25,4 @@ The ones that are included in the repository have been adapted slightly
 * Smooth ledstrip program switches?
 * Smooth script kills, restarts, etc. Should we properly daemonize it?
 * Add configuration parameters for the Modbus server, e.g. host, port?
+* Add option to start/pause the strip from running? StopException, StartException?
