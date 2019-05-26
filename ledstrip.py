@@ -7,6 +7,9 @@ import time
 
 from rpi_ws281x import *
 
+from signals.signals import Signal
+switch = Signal(providing_args=['switch'])
+
 LED_COUNT = 240
 LED_PIN = 18
 LED_FREQUENCE = 800000
@@ -23,12 +26,6 @@ formatter = logging.Formatter('%(asctime)s - %(name)-20s - %(levelname)-16s - %(
 handler.setFormatter(formatter)
 logging.basicConfig(level=logging.DEBUG, handlers=[handler])
 logger = logging.getLogger(__name__)
-
-class LedstripSignalSender(object):
-    pass
-
-class LedstripSwitchException(Exception):
-    pass
 
 class Ledstrip(Adafruit_NeoPixel):
 
@@ -116,31 +113,6 @@ class Ledstrip(Adafruit_NeoPixel):
                     self.setPixelColor(i+q, 0)
 
 
-# def colorize(args, value):
-#     #brightness = args.brightness
-#     #num_pixels = args.num_pixels
-
-#     #pixels = neopixel.NeoPixel(PIXEL_PIN, num_pixels, brightness=brightness, auto_write=False, pixel_order=ORDER)
-
-#     # NOTE: doe iets met value; ik weet nog niet precies wat de waarde kan zijn
-#     logger.info(value)
-#     color = None
-#     if value == 0:
-#         color = Color(255, 0, 0) # rood
-#     elif value == 1:
-#         color = Color(0, 255, 0) # groen
-#     else:
-#         # NOTE: alle andere gevallen
-#         color = Color(0, 0, 255) # blauw
-
-#     if color != None:
-#         for index in range(LEDCOUNT):
-#             strip.setPixelColor(index, color)
-#             strip.show()
-#             time.sleep(SLEEP)
-
-#     time.sleep(1)
-
 def program1(strip):
 
     red = Color(127, 0, 0) # rood
@@ -187,8 +159,13 @@ def program6(strip):
 
     strip.theaterChaseRainbow()
 
-from signals.signals import Signal
-switch = Signal(providing_args=['switch'])
+
+class LedstripSignalSender(object):
+    pass
+
+class LedstripSwitchException(Exception):
+    pass
+
 
 class SIGINT_handler():
     def __init__(self):
@@ -215,7 +192,7 @@ class SwitchableLedstrip(Ledstrip):
         raise LedstripSwitchException('Triggered LedstripSwitchException')
 
 
-class Wrapper(object):
+class LedstripController(object):
     def __init__(self):
         #super(SwitchableLedstrip, self).__init__()
         self.ledstrip = SwitchableLedstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
@@ -233,7 +210,7 @@ class Wrapper(object):
         should_continue = 0
         max_count = 10
         self.ledstrip.begin()
-        while True and should_continue < max_count: # NOTE: we loop 3 times for debugging.
+        while True and should_continue < max_count: # NOTE: we loop 10 times for debugging.
             try:
                 program3(self.ledstrip)
                 program4(self.ledstrip)
@@ -265,8 +242,8 @@ class Wrapper(object):
 
 def main(args):
     
-    strip = Wrapper()
-    strip.start()
+    controller = LedstripController()
+    controller.start()
 
 
 if __name__ == '__main__':
