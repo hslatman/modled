@@ -194,7 +194,7 @@ class SwitchableLedstrip(Ledstrip):
 
 class LedstripController(object):
     def __init__(self):
-        #super(SwitchableLedstrip, self).__init__()
+
         self.ledstrip = SwitchableLedstrip(LED_COUNT, LED_PIN, LED_FREQUENCE, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
 
         # NOTE: we register the SIGINT signal to be handled by SIGINT_handler

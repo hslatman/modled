@@ -25,6 +25,6 @@ The ones that are included in the repository have been adapted slightly
 * Improvement for closing the ledstrip: immediate action upon ending program by checking enabled/disabled value before showing the ledstrip again.
 * Initialization of Ledstrip from a Modbus command?
 * Smooth ledstrip program switches?
-* Smooth script kills, restarts, etc. Should we properly daemonize it?
+* Smooth script kills, restarts, etc. Should we properly daemonize it? Persist current state when stopping the server?
 * Add configuration parameters for the Modbus server, e.g. host, port?
 * Add option to start/pause the strip from running? StopException, StartException?
