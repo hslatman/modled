@@ -162,6 +162,13 @@ def run(host, port):
     )
 
     # NOTE: registering an additional looping task on the Twisted reactor
+    # TODO: look into https://github.com/riptideio/pymodbus/blob/master/examples/common/dbstore_update_server.py
+    # for an example using SQLite and reading values from the Modbus context; we could inject the context into
+    # the controller.loop() call as an argument, read the values, react to that, store it in the controller.
+    # Otherwise we could to a different loop, extract values and inject them into the controller. We need to
+    # check whether the context is thread safe. We're only reading, so it's relatively safe. Otherwise we would
+    # need to inject the values using a queue, for example. Downside is that it's not really reactive, but based
+    # on polling the values. The custom LedstripControlRequest approach could lead to a more reactive integration.
     controller_loop = task.LoopingCall(controller.loop)
     controller_loop.start(5.0)
 
