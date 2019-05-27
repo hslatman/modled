@@ -20,7 +20,10 @@ from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
 from pymodbus.pdu import ModbusRequest, ModbusResponse
 from pymodbus.register_write_message import WriteSingleRegisterRequest, WriteSingleRegisterResponse
 
+from twisted.logger._levels import LogLevel
 from twisted.internet import reactor
+from twisted.internet import task
+from twisted.python import log
 
 import ledstrip
 
@@ -30,6 +33,8 @@ logging.basicConfig(format=FORMAT)
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
+observer = log.PythonLoggingObserver()
+observer.start()
 
 class LedstripControlRequest(WriteSingleRegisterRequest):
 
@@ -52,19 +57,19 @@ class LedstripControlRequest(WriteSingleRegisterRequest):
         return result
 
 
-class SIGINT_handler():
-    def __init__(self):
-        self.SIGINT = False
+# class SIGINT_handler():
+#     def __init__(self):
+#         self.SIGINT = False
 
-    def signal_handler(self, signal, frame):
-        logger.debug('signal received')
-        if not self.SIGINT:
-            self.SIGINT = True
-            raise ModLedSigintException()
+#     def signal_handler(self, signal, frame):
+#         logger.debug('signal received')
+#         if not self.SIGINT:
+#             self.SIGINT = True
+#             raise ModLedSigintException()
 
-    def reset(self):
-        logger.debug('resetting signal handler')
-        self.SIGINT = False
+#     def reset(self):
+#         logger.debug('resetting signal handler')
+#         self.SIGINT = False
 
 class ModLedSigintException(Exception):
     pass
@@ -74,7 +79,8 @@ class ModLedController(threading.Thread):
     def __init__(self):
         super(ModLedController, self).__init__()
 
-        #self.daemon = True
+        #self.daemon = True # NOTE: daemon automatically kills the thread; we probably don't want that
+        #  
         self._stop_event = threading.Event()
 
         count = ledstrip.LED_COUNT
@@ -95,22 +101,24 @@ class ModLedController(threading.Thread):
             brightness=brightness
         )
 
-        logger.debug('here')
-
-
     def run(self):
 
-        while True:
+        while not self.stopped():
             logger.debug('do some stuff here')
-
-
             time.sleep(1)
 
-        self.stop()
+            # TODO: logic for changing the ledstrip color, program, etc.
+            # TODO: can we make this work with asyncio?
+
+    def loop(self):
+        # TODO: check whether we should change the program and/or configuration for ledstrip
+        # Should be performed in a thread safe manner, because we're in a different thread
+        logger.debug('controller loop')
     
     def stop(self):
-        logger.debug('stopping')
-        self.ledstrip.clear()
+        logger.debug('stopping ledstrip')
+        if hasattr(self, 'ledstrip') and self.ledstrip: # NOTE: hasattr for debugging
+            self.ledstrip.clear()
         self._stop_event.set()
 
     def stopped(self):
@@ -140,34 +148,37 @@ def run(host, port):
     #signal_handler = SIGINT_handler()
     #signal.signal(signal.SIGINT, signal_handler.signal_handler)
 
-    # NOTE: we're running the ModLedController as a thread
+    # NOTE: we're running the ModLedController as a separate thread
     controller = ModLedController()
     controller.start()
 
     # NOTE: starting the server with custom LedstripControlRequest
-    # StartTcpServer(
-    #     context, 
-    #     identity=identity, 
-    #     address=(host, port),
-    #     custom_functions=[LedstripControlRequest]
-    # )
+    StartTcpServer(
+        context, 
+        identity=identity, 
+        address=(host, port),
+        custom_functions=[LedstripControlRequest],
+        defer_reactor_run=True
+    )
 
+    # NOTE: registering an additional looping task on the Twisted reactor
+    controller_loop = task.LoopingCall(controller.loop)
+    controller_loop.start(5.0)
+
+    def log_sigint(event):
+        if event.get("log_text") == 'Received SIGINT, shutting down.':
+            logger.debug("Stopping for: ", event)
+            controller.stop()
+            controller.join()
+            # if reactor.running:
+            #     reactor.stop()
+
+    # NOTE: we're adding an observer that checks for SIGINT; we can then stop the controller properly
+    log.addObserver(log_sigint)
+
+    # NOTE: starting the Twisted reactor
     logger.debug('starting server')
-
-    try:
-        StartTcpServer(
-            context, 
-            identity=identity, 
-            address=(host, port),
-            custom_functions=[LedstripControlRequest],
-            defer_reactor_run=False
-        )
-    except ModLedSigintException as e:
-        logger.debug('stopping')
-        controller.stop()
-        StopServer()
-
-    logger.debug('finished')
+    reactor.run()
 
 
 if __name__ == "__main__":
