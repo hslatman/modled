@@ -19,7 +19,7 @@ from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
 from pymodbus.transaction import (ModbusRtuFramer,
                                   ModbusAsciiFramer,
                                   ModbusBinaryFramer)
-from custom_message import CustomModbusRequest
+#from custom_message import CustomModbusRequest
 
 # --------------------------------------------------------------------------- # 
 # configure the service logging
@@ -30,6 +30,76 @@ FORMAT = ('%(asctime)-15s %(threadName)-15s'
 logging.basicConfig(format=FORMAT)
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
+
+from pymodbus.pdu import ModbusRequest, ModbusResponse
+from pymodbus.register_write_message import WriteSingleRegisterRequest, WriteSingleRegisterResponse
+
+class LedstripControlRequest(WriteSingleRegisterRequest):
+
+    def __init__(self, address=None, **kwargs):
+        super(LedstripControlRequest, self).__init__(self, **kwargs)
+        self.address = address
+        self.count = 16
+    
+    def encode(self):
+        """ Encodes response pdu
+
+        :returns: The encoded packet message
+        """
+        #print('encode request')
+        result = super().encode()
+        return result
+
+    def decode(self, data):
+        """ Decodes response pdu
+
+        :param data: The packet data to decode
+        """
+        #print('decode request')
+        super().decode(data)
+
+    def execute(self, context):
+        #print('execute request')
+        result = super().execute(context)
+
+        if isinstance(result, ModbusResponse):
+            address = result.address
+            value = result.value
+
+            #print(address, value)
+            print(f"Value {value} written at {address}")
+
+        #print(result)
+        #print(context)
+        #print(self.address)
+        #print(self.count)
+
+        return result
+
+class LedstripControlResponse(WriteSingleRegisterResponse):
+
+    # NOTE: currently unused; would need to be instantiated in execute() function
+
+    def __init__(self, values=None, **kwargs):
+        super(LedstripControlResponse, self).__init__(self, **kwargs)
+        self.values = values or []
+    
+    def encode(self):
+        """ Encodes response pdu
+
+        :returns: The encoded packet message
+        """
+        print('encode response')
+        result = super().encode()
+        return result
+
+    def decode(self, data):
+        """ Decodes response pdu
+
+        :param data: The packet data to decode
+        """
+        print('decode response')
+        super().decode(data)
 
 
 def run_async_server():
@@ -169,12 +239,12 @@ def run_async_server():
     # If you don't set this or any fields, they are defaulted to empty strings.
     # ----------------------------------------------------------------------- # 
     identity = ModbusDeviceIdentification()
-    identity.VendorName = 'Pymodbus'
-    identity.ProductCode = 'PM'
-    identity.VendorUrl = 'http://github.com/bashwork/pymodbus/'
-    identity.ProductName = 'Pymodbus Server'
-    identity.ModelName = 'Pymodbus Server'
-    identity.MajorMinorRevision = '2.2.0'
+    identity.VendorName = 'hslatman'
+    identity.ProductCode = 'MLS'
+    identity.VendorUrl = 'https://github.com/hslatman/ledstrip'
+    identity.ProductName = 'ModLed Server'
+    identity.ModelName = 'ModLed X'
+    identity.MajorMinorRevision = '0.1.0'
     
     # ----------------------------------------------------------------------- # 
     # run the server you want
@@ -182,8 +252,14 @@ def run_async_server():
 
     # TCP Server
 
+    # StartTcpServer(context, identity=identity, address=("0.0.0.0", 502),
+    #                custom_functions=[CustomModbusRequest])
+
+    #StartTcpServer(context, identity=identity, address=("0.0.0.0", 502))
+    
     StartTcpServer(context, identity=identity, address=("0.0.0.0", 502),
-                   custom_functions=[CustomModbusRequest])
+        custom_functions=[LedstripControlRequest]
+    )
 
     # TCP Server with deferred reactor run
 
