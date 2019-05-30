@@ -1,22 +1,20 @@
 #!/usr/bin/env python
 """
-Pymodbus Asynchronous Server Example
---------------------------------------------------------------------------
-The asynchronous server is a high performance implementation using the
-twisted library as its backend.  This allows it to scale to many thousands
-of nodes which can be helpful for testing monitoring software.
+ModLed - Driving a ws281x ledstrip using Modbus
 """
 
 import argparse
 import logging
 import signal
+import struct
+import sqlite3
 import threading
 import time
 
 from pymodbus.server.asynchronous import StartTcpServer, StopServer
 from pymodbus.device import ModbusDeviceIdentification
-from pymodbus.datastore import ModbusSequentialDataBlock
-from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
+from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
+from pymodbus.datastore.database import SqlSlaveContext
 from pymodbus.pdu import ModbusRequest, ModbusResponse
 from pymodbus.register_write_message import WriteSingleRegisterRequest, WriteSingleRegisterResponse
 
@@ -24,6 +22,13 @@ from twisted.logger._levels import LogLevel
 from twisted.internet import reactor
 from twisted.internet import task
 from twisted.python import log
+
+import sqlalchemy
+import sqlalchemy.types as sqltypes
+from sqlalchemy.sql import and_
+from sqlalchemy.schema import UniqueConstraint
+from sqlalchemy.sql.expression import bindparam
+from sqlalchemy import select, func
 
 import ledstrip
 
@@ -79,8 +84,6 @@ class ModLedController(threading.Thread):
     def __init__(self):
         super(ModLedController, self).__init__()
 
-        #self.daemon = True # NOTE: daemon automatically kills the thread; we probably don't want that
-        #  
         self._stop_event = threading.Event()
 
         count = ledstrip.LED_COUNT
@@ -125,22 +128,85 @@ class ModLedController(threading.Thread):
         return self._stop_event.is_set()
 
 
+class ModLedSqlSlaveContext(SqlSlaveContext):
+    def __init__(self):
+        table = 'modled'
+        db_file = 'modled.sqlite3'
+        database = f"sqlite:///{db_file}"
+        super(ModLedSqlSlaveContext, self).__init__(table=table, database=database)
+
+    def initialize(self, hr, force=False):
+        # NOTE: this function is currently hardcoded to work with Holding Registers only
+        logger.info('Initializing SQLite database')
+        number_of_existing_holding_registers = self._count('h')
+        if number_of_existing_holding_registers == 0:
+            logger.info(f"Initializing {self.database} with {hr}.")
+            address = hr.address
+            values = hr.values
+            # NOTE: this is rather naive, but it works for now; we can improve later
+            self._set('h', address, values)
+        else:
+            logger.info(f"{self.database} already contains {number_of_existing_holding_registers} register addresses.")
+
+    def _count(self, type):
+        count = select([func.count()]).select_from(self._table).where(self._table.c.type == type).scalar()
+        return count
+
+
 def run(host, port):
 
-    store = ModbusSlaveContext(
-        hr=ModbusSequentialDataBlock(0, [17]*10)
+    # store = ModbusSlaveContext(
+    #     hr=ModbusSequentialDataBlock(0, [17]*10)
+    # )
+
+    # context = ModbusServerContext(
+    #     slaves=store, 
+    #     single=True
+    # )
+
+    # NOTE: currently we don't do anything with the block, although it's given in the
+    # example usage at https://github.com/riptideio/pymodbus/blob/2ef91e9e565b10fc9abc0840c87cf4a29f3d9bbf/examples/common/dbstore_update_server.py
+    # The code for initialization seems a bit off, because the block values are NOT used for initialisation of the
+    # SQLite database when the SqlSlaveContext is created. Perhaps this requires a bug fix in the _create_db function?
+    # We should probably parse all the kwargs for blocks, these should be added by default.
+    block = ModbusSequentialDataBlock(1, [17]*10)
+    
+    # NOTE: below we're defining our modled.sqlite3 database (on disk) and table (modled) that
+    # pymodbus should use to write its values to. Initialisation of the ModbusSequentialDataBlock is
+    # ignored by the SqlSlaveContext for some reason (bug?). We don't have any values at the start,
+    # so, trying to read and/or write from/to these addresses will fail. We can manually initialise the
+    # database though. The schema is as follows:
+    #
+    # 1 table, with three columns: type, index and value
+    #
+    # type: varchar(1), h is for Holding Registers, which is what we need; others are d, c and i? See IModbusSlaveContext.
+    # index: the address of the register; I've observed a difference of 1 between Modbus Doctor and SQLite (address = address + 1, unconditionally)
+    # value: the value that is stored at the address
+    #
+    # So, as an example, we can read from register 1 using Modbus Doctor, we would need to 
+    # query for type 'h', address 1 (translated to 2 by SqlSlaveContext)
+    # 
+    # Solutions to fixing the initialisation:
+    #  
+    #  1) fix the SqlSlaveContext implementation (best), including the address mode
+    #  2) override _create_db function locally and make sure that we can parse the block (good)
+    #  3) prefil the SQLite database, with the values we want when it does not exist (easiest?)
+
+    store = ModLedSqlSlaveContext()
+    store.initialize(hr=block) # NOTE: we're initializing with a block for Holding Registers only now.
+    context = ModbusServerContext(
+        slaves={1: store}, 
+        single=False
     )
 
-    context = ModbusServerContext(
-        slaves=store, 
-        single=True
-    )
+    # TODO: create the right configuration in the ModbusSequentialDataBlock (block) for normal operation
+    # TODO: retrieve the values when starting the ledstrip (after shutdown?) from context
     
     # NOTE: initializing the Modbus server identification
     identity = ModbusDeviceIdentification()
     identity.VendorName = 'hslatman'
     identity.ProductCode = 'MLS'
-    identity.VendorUrl = 'https://github.com/hslatman/ledstrip'
+    identity.VendorUrl = 'https://github.com/hslatman/modled'
     identity.ProductName = 'ModLed Server'
     identity.ModelName = 'ModLed X'
     identity.MajorMinorRevision = '0.1.0'
