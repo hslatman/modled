@@ -27,3 +27,4 @@ The ones that are included in the repository have been adapted slightly
 * Smooth ledstrip program switches?
 * Smooth script kills, restarts, etc. Should we properly daemonize it? Persist current state when stopping the server?
 * Add option to start/pause the strip from running? StopException, StartException?
+* Break on permission error?

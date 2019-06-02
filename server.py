@@ -30,8 +30,6 @@ from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy import select, func
 
-import ledstrip
-
 FORMAT = ('%(asctime)-15s %(threadName)-15s'
           ' %(levelname)-8s %(module)-15s:%(lineno)-8s %(message)s')
 logging.basicConfig(format=FORMAT)
@@ -81,28 +79,32 @@ class ModLedSigintException(Exception):
 
 class ModLedController(threading.Thread):
 
-    def __init__(self):
+    def __init__(self, disable_ledstrip=False):
         super(ModLedController, self).__init__()
 
         self._stop_event = threading.Event()
+        self._ledstrip_enabled = not disable_ledstrip
 
-        count = ledstrip.LED_COUNT
-        pin = ledstrip.LED_PIN
-        frequence = ledstrip.LED_FREQUENCE
-        dma = ledstrip.LED_DMA
-        invert = ledstrip.LED_INVERT
-        brightness =  ledstrip.LED_BRIGHTNESS
+        if self._ledstrip_enabled:
+            import ledstrip
 
-        # TODO: we want the ledstrip to be initialized with some settings that can be set
-        # using Modbus. We need to device a solution for this. For now, we pick the hardcoded defaults.
-        self.ledstrip = ledstrip.SwitchableLedstrip(
-            count=count, 
-            pin=pin, 
-            frequence=frequence, 
-            dma=dma, 
-            invert=invert, 
-            brightness=brightness
-        )
+            count = ledstrip.LED_COUNT
+            pin = ledstrip.LED_PIN
+            frequence = ledstrip.LED_FREQUENCE
+            dma = ledstrip.LED_DMA
+            invert = ledstrip.LED_INVERT
+            brightness =  ledstrip.LED_BRIGHTNESS
+
+            # TODO: we want the ledstrip to be initialized with some settings that can be set
+            # using Modbus. We need to device a solution for this. For now, we pick the hardcoded defaults.
+            self.ledstrip = ledstrip.SwitchableLedstrip(
+                count=count, 
+                pin=pin, 
+                frequence=frequence, 
+                dma=dma, 
+                invert=invert, 
+                brightness=brightness
+            )
 
     def run(self):
 
@@ -120,7 +122,7 @@ class ModLedController(threading.Thread):
     
     def stop(self):
         logger.debug('stopping ledstrip')
-        if hasattr(self, 'ledstrip') and self.ledstrip: # NOTE: hasattr for debugging
+        if self._ledstrip_enabled and hasattr(self, 'ledstrip') and self.ledstrip:
             self.ledstrip.clear()
         self._stop_event.set()
 
@@ -153,7 +155,7 @@ class ModLedSqlSlaveContext(SqlSlaveContext):
         return count
 
 
-def run(host, port):
+def run(host, port, disable_ledstrip=False):
 
     # store = ModbusSlaveContext(
     #     hr=ModbusSequentialDataBlock(0, [17]*10)
@@ -215,7 +217,7 @@ def run(host, port):
     #signal.signal(signal.SIGINT, signal_handler.signal_handler)
 
     # NOTE: we're running the ModLedController as a separate thread
-    controller = ModLedController()
+    controller = ModLedController(disable_ledstrip=disable_ledstrip)
     controller.start()
 
     # NOTE: starting the server with custom LedstripControlRequest
@@ -259,14 +261,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='ModLed X Controller.')
     parser.add_argument('-H', '--host', nargs='?', type=str, default='127.0.0.1', help='The Modbus server host (hostname / IP)')
     parser.add_argument('-P', '--port', nargs='?', type=int, default=502, help='The Modbus server port number')
+    parser.add_argument('-DL', '--disable-ledstrip', action='store_true', help='Disable the ledstrip operation (for debugging)')
 
     args = parser.parse_args()
 
     host = args.host
     port = args.port
+    disable_ledstrip = args.disable_ledstrip
 
     try:
-        run(host, port)
+        run(host, port, disable_ledstrip)
     except Exception as e:
         logger.error(e)
     
