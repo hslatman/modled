@@ -194,6 +194,8 @@ def run(host, port, disable_ledstrip=False):
     #  2) override _create_db function locally and make sure that we can parse the block (good)
     #  3) prefil the SQLite database, with the values we want when it does not exist (easiest?)
 
+    # TODO: create and write the right configuration in the ModbusSequentialDataBlock (block) for normal operation
+
     store = ModLedSqlSlaveContext()
     store.initialize(hr=block) # NOTE: we're initializing with a block for Holding Registers only now.
     context = ModbusServerContext(
@@ -201,8 +203,13 @@ def run(host, port, disable_ledstrip=False):
         single=False
     )
 
-    # TODO: create the right configuration in the ModbusSequentialDataBlock (block) for normal operation
-    # TODO: retrieve the values when starting the ledstrip (after shutdown?) from context
+    function = 3 # read holding registers
+    slave_id = 1 # slave address
+    address = 0
+    count = 10
+
+    values = context[slave_id].getValues(function, address, count)
+    logger.debug("Values from datastore: " + str(values))
     
     # NOTE: initializing the Modbus server identification
     identity = ModbusDeviceIdentification()
@@ -228,6 +235,8 @@ def run(host, port, disable_ledstrip=False):
         custom_functions=[LedstripControlRequest],
         defer_reactor_run=True
     )
+
+
 
     # NOTE: registering an additional looping task on the Twisted reactor
     # TODO: look into https://github.com/riptideio/pymodbus/blob/master/examples/common/dbstore_update_server.py
