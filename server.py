@@ -196,19 +196,19 @@ def run(host, port, disable_ledstrip=False):
 
     # TODO: create and write the right configuration in the ModbusSequentialDataBlock (block) for normal operation
 
+    unit = 0 # NOTE: unit functions like an identifier for a slave
     store = ModLedSqlSlaveContext()
     store.initialize(hr=block) # NOTE: we're initializing with a block for Holding Registers only now.
     context = ModbusServerContext(
-        slaves={1: store}, 
+        slaves={unit: store}, # NOTE: Currently the SqlSlaveContext does not seem to support multiple slaves? How to distinguish?
         single=False
     )
 
     function = 3 # read holding registers
-    slave_id = 1 # slave address
     address = 0
     count = 10
 
-    values = context[slave_id].getValues(function, address, count)
+    values = context[unit].getValues(function, address, count)
     logger.debug("Values from datastore: " + str(values))
     
     # NOTE: initializing the Modbus server identification
@@ -246,8 +246,8 @@ def run(host, port, disable_ledstrip=False):
     # check whether the context is thread safe. We're only reading, so it's relatively safe. Otherwise we would
     # need to inject the values using a queue, for example. Downside is that it's not really reactive, but based
     # on polling the values. The custom LedstripControlRequest approach could lead to a more reactive integration.
-    controller_loop = task.LoopingCall(controller.loop)
-    controller_loop.start(5.0)
+    #ontroller_loop = task.LoopingCall(controller.loop)
+    #controller_loop.start(5.0)
 
     def log_sigint(event):
         if event.get("log_text") == 'Received SIGINT, shutting down.':
