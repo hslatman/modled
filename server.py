@@ -53,7 +53,7 @@ class LedstripControlRequest(WriteSingleRegisterRequest):
             address = result.address
             value = result.value
 
-            logger.debug(f"Value {value} written at {address}")
+            logger.debug(f"Value {value} written at {address}") # NOTE: the address reported here should probably be incremented to properly reflect the value in get/set-values
 
             # TODO: signal controller to do something with the value at address
 
@@ -131,10 +131,9 @@ class ModLedController(threading.Thread):
 
 
 class ModLedSqlSlaveContext(SqlSlaveContext):
-    def __init__(self):
-        table = 'modled'
-        db_file = 'modled.sqlite3'
-        database = f"sqlite:///{db_file}"
+    def __init__(self, database='modled'):
+        table = database
+        database = f"sqlite:///{table}.sqlite3"
         super(ModLedSqlSlaveContext, self).__init__(table=table, database=database)
 
     def initialize(self, hr, force=False):
@@ -155,7 +154,7 @@ class ModLedSqlSlaveContext(SqlSlaveContext):
         return count
 
 
-def run(host, port, disable_ledstrip=False):
+def run(host, port, database='modled', disable_ledstrip=False):
 
     # store = ModbusSlaveContext(
     #     hr=ModbusSequentialDataBlock(0, [17]*10)
@@ -197,7 +196,7 @@ def run(host, port, disable_ledstrip=False):
     # TODO: create and write the right configuration in the ModbusSequentialDataBlock (block) for normal operation
 
     unit = 0 # NOTE: unit functions like an identifier for a slave
-    store = ModLedSqlSlaveContext()
+    store = ModLedSqlSlaveContext(database=database)
     store.initialize(hr=block) # NOTE: we're initializing with a block for Holding Registers only now.
     context = ModbusServerContext(
         slaves={unit: store}, # NOTE: Currently the SqlSlaveContext does not seem to support multiple slaves? How to distinguish?
@@ -270,16 +269,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='ModLed X Controller.')
     parser.add_argument('-H', '--host', nargs='?', type=str, default='127.0.0.1', help='The Modbus server host (hostname / IP)')
     parser.add_argument('-P', '--port', nargs='?', type=int, default=502, help='The Modbus server port number')
+    parser.add_argument('-D', '--database', nargs='?', type=str, default='modled', help='The datatabase file (prefix) to use')
     parser.add_argument('-DL', '--disable-ledstrip', action='store_true', help='Disable the ledstrip operation (for debugging)')
-
+    
     args = parser.parse_args()
 
     host = args.host
     port = args.port
+    database = args.database
     disable_ledstrip = args.disable_ledstrip
 
     try:
-        run(host, port, disable_ledstrip)
+        run(host, port, database=database, disable_ledstrip=disable_ledstrip)
     except Exception as e:
         logger.error(e)
     
