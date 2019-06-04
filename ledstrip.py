@@ -4,6 +4,7 @@ import logging
 import signal
 import sys
 import time
+import queue
 
 from rpi_ws281x import *
 
@@ -190,6 +191,20 @@ class SwitchableLedstrip(Ledstrip):
     def triggerSwitch(self, sender, **kwargs):
         # NOTE: we're not doing anything with sender nor the available kwargs; could be an improvement
         raise LedstripSwitchException('Triggered LedstripSwitchException')
+
+
+class ExceptionRaisingLedstrip(Ledstrip)
+    def __init__(self, queue: queue.Queue, num, pin, freq_hz=800000, dma=10, invert=False, brightness=255, channel=0):
+        super(ExceptionRaisingLedstrip, self).__init__(num, pin, freq_hz, dma, invert, brightness, channel)
+        self._queue = queue
+
+    def show(self):
+        # NOTE: we're overriding the show() function as a natural break point during normal ledstrip operation
+        if not self._queue.empty():
+            value = self._queue.get() # NOTE: we're not doing anything with the value
+            raise LedstripSwitchException()
+
+        super(ExceptionThrowingLedstrip, self).show()
 
 
 class LedstripController(object):
