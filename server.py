@@ -10,6 +10,7 @@ import struct
 import sqlite3
 import threading
 import time
+import queue
 
 from multiprocessing import Process
 
@@ -66,12 +67,31 @@ class LedstripControlRequest(WriteSingleRegisterRequest):
 
         return result
 
+class LedstripSwitchException(Exception):
+    pass
 
-class ModLedController(object):
+class ExceptionRaisingLedstripMock(object):
+    def __init__(self, queue: queue.Queue):
+        super(ExceptionRaisingLedstripMock, self).__init__()
+        self._queue = queue
 
-    def __init__(self, disable_ledstrip=False):
+    def show(self):
+        # NOTE: we're overriding the show() function as a natural break point during normal ledstrip operation
+        if not self._queue.empty():
+            value = self._queue.get()
+            logger.debug(f"Value: {value}")
+            logger.debug('raising LedstripSwitchException')
+            raise LedstripSwitchException()
+
+        logger.debug('showing ledstrip')
+
+
+class ModLedController(threading.Thread):
+
+    def __init__(self, queue, disable_ledstrip=False):
         super(ModLedController, self).__init__()
 
+        self._queue = queue
         self._stop_event = threading.Event()
         self._ledstrip_enabled = not disable_ledstrip
 
@@ -87,7 +107,8 @@ class ModLedController(object):
 
             # TODO: we want the ledstrip to be initialized with some settings that can be set
             # using Modbus. We need to device a solution for this. For now, we pick the hardcoded defaults.
-            self.ledstrip = ledstrip.SwitchableLedstrip(
+            self.ledstrip = ledstrip.ExceptionRaisingLedstrip(
+                queue=self._queue,
                 count=count, 
                 pin=pin, 
                 frequence=frequence, 
@@ -95,18 +116,31 @@ class ModLedController(object):
                 invert=invert, 
                 brightness=brightness
             )
+        else:
+            self.ledstrip = ExceptionRaisingLedstripMock(self._queue)
+
+    def run(self):
+        self.drive()
 
     def drive(self):
         logger.debug('starting ledstrip')
         while not self.stopped():
             if self._ledstrip_enabled:
-                logger.debug('driving ledstrip')
                 # TODO: drive the ledstrip, by configuring it right, starting the program, etc.
+                try:
+                    logger.debug('driving ledstrip')
+                except ledstrip.LedstripSwitchException as e:
+                    logger.debug(e)
+                    logger.debug('LedstripSwitchException handled')
             else:
-                #NOTE: this implementation is provided for the sole purpose of simulating the ledstrip
-                logger.debug('do some stuff here')
-                time.sleep(1)
-
+                # NOTE: this implementation is provided for the sole purpose of simulating the ledstrip
+                try:
+                    self.ledstrip.show()
+                    time.sleep(1)
+                except LedstripSwitchException as e:
+                    logger.debug(e)
+                    logger.debug('LedstripSwitchException handled')
+                
             # TODO: logic for changing the ledstrip color, program, etc.
             # TODO: can we make this work with asyncio?
 
@@ -218,29 +252,20 @@ def run(host, port, database='modled', disable_ledstrip=False):
     identity.ModelName = 'ModLed X'
     identity.MajorMinorRevision = '0.1.0'
 
-    # NOTE: we're running the ModLedController as a separate thread
-    controller = ModLedController(disable_ledstrip=disable_ledstrip)
-    controller_process = Process(target=controller.drive)
-    controller_process.start()
+    signal_queue = queue.Queue()
+    controller = ModLedController(queue=signal_queue, disable_ledstrip=disable_ledstrip)
+    controller.start()
 
-    def ttt(sender, **kwargs):
-        print('ttt called')
-        print(sender)
-        print(kwargs)
+    def handler(sender, **kwargs):
+        
         # TODO: do something with the address and value in kwargs
         # TODO: determine whether a reset of the ledstrip is required? e.g. first a clear, for some programs?
         # TODO: restart the controller process
-        # should_stop = True
-        # if should_stop:
-        #     controller.stop()
-        controller.stop()
-        controller.reset()
-        controller_process.terminate()
-        controller_process.join()
-        controller_process = Process(target=controller.drive)
-        controller_process.start()
         
-    control_signal.connect(ttt)
+        value = {'address': kwargs['address'], 'value': kwargs['value']}
+        signal_queue.put(value)
+
+    control_signal.connect(handler)
 
     # NOTE: starting the server with custom LedstripControlRequest
     StartTcpServer(
@@ -266,9 +291,7 @@ def run(host, port, database='modled', disable_ledstrip=False):
         if event.get("log_text") == 'Received SIGINT, shutting down.':
             logger.debug("Stopping for: ", event)
             controller.stop()
-            controller_process.terminate()
-            controller_process.join()
-            #controller.join()
+            controller.join()
             # if reactor.running:
             #     reactor.stop()
 
