@@ -96,7 +96,8 @@ class ModLedController(object):
                 brightness=brightness
             )
 
-    def run(self):
+    def drive(self):
+        logger.debug('starting ledstrip')
         while not self.stopped():
             if self._ledstrip_enabled:
                 logger.debug('driving ledstrip')
@@ -122,6 +123,10 @@ class ModLedController(object):
 
     def stopped(self):
         return self._stop_event.is_set()
+
+    def reset(self):
+        logger.debug('resetting controller')
+        self._stop_event = threading.Event()
 
 
 class ModLedSqlSlaveContext(SqlSlaveContext):
@@ -215,7 +220,7 @@ def run(host, port, database='modled', disable_ledstrip=False):
 
     # NOTE: we're running the ModLedController as a separate thread
     controller = ModLedController(disable_ledstrip=disable_ledstrip)
-    controller_process = Process(target=controller.run)
+    controller_process = Process(target=controller.drive)
     controller_process.start()
 
     def ttt(sender, **kwargs):
@@ -223,8 +228,18 @@ def run(host, port, database='modled', disable_ledstrip=False):
         print(sender)
         print(kwargs)
         # TODO: do something with the address and value in kwargs
+        # TODO: determine whether a reset of the ledstrip is required? e.g. first a clear, for some programs?
         # TODO: restart the controller process
-
+        # should_stop = True
+        # if should_stop:
+        #     controller.stop()
+        controller.stop()
+        controller.reset()
+        controller_process.terminate()
+        controller_process.join()
+        controller_process = Process(target=controller.drive)
+        controller_process.start()
+        
     control_signal.connect(ttt)
 
     # NOTE: starting the server with custom LedstripControlRequest
