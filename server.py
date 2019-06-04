@@ -11,6 +11,8 @@ import sqlite3
 import threading
 import time
 
+from multiprocessing import Process
+
 from pymodbus.server.asynchronous import StartTcpServer, StopServer
 from pymodbus.device import ModbusDeviceIdentification
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
@@ -39,6 +41,9 @@ logger.setLevel(logging.DEBUG)
 observer = log.PythonLoggingObserver()
 observer.start()
 
+from signals.signals import Signal
+control_signal = Signal(providing_args=['address', 'value'])
+
 class LedstripControlRequest(WriteSingleRegisterRequest):
 
     def __init__(self, address=None, **kwargs):
@@ -55,29 +60,14 @@ class LedstripControlRequest(WriteSingleRegisterRequest):
 
             logger.debug(f"Value {value} written at {address}") # NOTE: the address reported here should probably be incremented to properly reflect the value in get/set-values
 
-            # TODO: signal controller to do something with the value at address
+            control_signal.send_robust(sender=None, address=address, value=value)
+
+            logger.debug('control_signal sent')
 
         return result
 
 
-# class SIGINT_handler():
-#     def __init__(self):
-#         self.SIGINT = False
-
-#     def signal_handler(self, signal, frame):
-#         logger.debug('signal received')
-#         if not self.SIGINT:
-#             self.SIGINT = True
-#             raise ModLedSigintException()
-
-#     def reset(self):
-#         logger.debug('resetting signal handler')
-#         self.SIGINT = False
-
-class ModLedSigintException(Exception):
-    pass
-
-class ModLedController(threading.Thread):
+class ModLedController(object):
 
     def __init__(self, disable_ledstrip=False):
         super(ModLedController, self).__init__()
@@ -107,10 +97,14 @@ class ModLedController(threading.Thread):
             )
 
     def run(self):
-
         while not self.stopped():
-            logger.debug('do some stuff here')
-            time.sleep(1)
+            if self._ledstrip_enabled:
+                logger.debug('driving ledstrip')
+                # TODO: drive the ledstrip, by configuring it right, starting the program, etc.
+            else:
+                #NOTE: this implementation is provided for the sole purpose of simulating the ledstrip
+                logger.debug('do some stuff here')
+                time.sleep(1)
 
             # TODO: logic for changing the ledstrip color, program, etc.
             # TODO: can we make this work with asyncio?
@@ -119,7 +113,7 @@ class ModLedController(threading.Thread):
         # TODO: check whether we should change the program and/or configuration for ledstrip
         # Should be performed in a thread safe manner, because we're in a different thread
         logger.debug('controller loop')
-    
+
     def stop(self):
         logger.debug('stopping ledstrip')
         if self._ledstrip_enabled and hasattr(self, 'ledstrip') and self.ledstrip:
@@ -219,12 +213,19 @@ def run(host, port, database='modled', disable_ledstrip=False):
     identity.ModelName = 'ModLed X'
     identity.MajorMinorRevision = '0.1.0'
 
-    #signal_handler = SIGINT_handler()
-    #signal.signal(signal.SIGINT, signal_handler.signal_handler)
-
     # NOTE: we're running the ModLedController as a separate thread
     controller = ModLedController(disable_ledstrip=disable_ledstrip)
-    controller.start()
+    controller_process = Process(target=controller.run)
+    controller_process.start()
+
+    def ttt(sender, **kwargs):
+        print('ttt called')
+        print(sender)
+        print(kwargs)
+        # TODO: do something with the address and value in kwargs
+        # TODO: restart the controller process
+
+    control_signal.connect(ttt)
 
     # NOTE: starting the server with custom LedstripControlRequest
     StartTcpServer(
@@ -235,8 +236,6 @@ def run(host, port, database='modled', disable_ledstrip=False):
         defer_reactor_run=True
     )
 
-
-
     # NOTE: registering an additional looping task on the Twisted reactor
     # TODO: look into https://github.com/riptideio/pymodbus/blob/master/examples/common/dbstore_update_server.py
     # for an example using SQLite and reading values from the Modbus context; we could inject the context into
@@ -245,14 +244,16 @@ def run(host, port, database='modled', disable_ledstrip=False):
     # check whether the context is thread safe. We're only reading, so it's relatively safe. Otherwise we would
     # need to inject the values using a queue, for example. Downside is that it's not really reactive, but based
     # on polling the values. The custom LedstripControlRequest approach could lead to a more reactive integration.
-    #ontroller_loop = task.LoopingCall(controller.loop)
-    #controller_loop.start(5.0)
+    # controller_loop = task.LoopingCall(controller.loop)
+    # controller_loop.start(5.0)
 
     def log_sigint(event):
         if event.get("log_text") == 'Received SIGINT, shutting down.':
             logger.debug("Stopping for: ", event)
             controller.stop()
-            controller.join()
+            controller_process.terminate()
+            controller_process.join()
+            #controller.join()
             # if reactor.running:
             #     reactor.stop()
 
