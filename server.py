@@ -153,6 +153,7 @@ class ModLedController(threading.Thread):
             should_check_state = False
             if self._on:
                 if self._ledstrip_enabled:
+                    import ledstrip
                     if not self._has_bugun:
                         self.ledstrip.begin()
                         self._has_bugun = True
