@@ -163,11 +163,14 @@ class ModLedController(threading.Thread):
                         if self._program == 'rainbow':
                             self.ledstrip.rainbow()
                         elif self._program == 'strandtest':
-                            self.ledstrip.theaterChase() # TODO: strandtest?
+                            from rpi_ws281x import Color
+                            color = Color(255, 255, 255)
+                            self.ledstrip.theaterChase(color) # TODO: strandtest?
                         else:
                             from rpi_ws281x import Color
                             color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
                             self.ledstrip.fill(color)
+                            time.sleep(1)
                     except ledstrip.LedstripSwitchException as e:
                         logger.debug(e)
                         logger.debug('LedstripSwitchException handled')
@@ -187,10 +190,10 @@ class ModLedController(threading.Thread):
                     
                 # TODO: logic for changing the ledstrip color, program, etc.
                 # TODO: can we make this work with asyncio?
-            #else:
+            else:
                 # When we should be off, we'll sleep for a little while, to not seem too busy...
-            #    time.sleep(1)
-            #    should_check_state = True
+                time.sleep(1)
+                should_check_state = True
 
             if should_check_state:
                 if self._on:
