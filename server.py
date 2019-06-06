@@ -159,6 +159,14 @@ class ModLedController(threading.Thread):
                     try:
                         # TODO: drive the ledstrip, by configuring it right, starting the program, etc.
                         logger.debug('driving ledstrip')
+                        if self._program == 'rainbow':
+                            self.ledstrip.rainbow()
+                        elif self._program == 'strandtest':
+                            self.ledstrip.theaterChase() # TODO: strandtest?
+                        else:
+                            from rpi_ws281x import Color
+                            color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
+                            self.ledstrip.fill(color)
                     except ledstrip.LedstripSwitchException as e:
                         logger.debug(e)
                         logger.debug('LedstripSwitchException handled')
@@ -166,9 +174,11 @@ class ModLedController(threading.Thread):
                 else:
                     # NOTE: this implementation is provided for the sole purpose of simulating the ledstrip
                     try:
-
                         self.ledstrip.show()
-                        time.sleep(1)
+                        logger.debug(f"Program: {self._program}")
+                        if self._program == 'fixed':
+                            logger.debug(f"Colors: {self._color_tuple}")
+                        time.sleep(5)
                     except LedstripSwitchException as e:
                         logger.debug(e)
                         logger.debug('LedstripSwitchException handled')
@@ -307,18 +317,22 @@ def run(host, port, database='modled', disable_ledstrip=False):
         number_of_leds = a40005
         brightness = a40006
         pin = a40007
+
+        program = 'fixed'
+        if rainbow:
+            program = 'rainbow'
+        if strandtest:
+            program = 'strandtest'
+
         configuration = {
             'on': on,
-            'fixed': fixed,
-            'rainbow': rainbow,
-            'strandtest': strandtest,
             'red': red,
             'green': green,
             'blue': blue,
             'number_of_leds': number_of_leds,
             'brightness': brightness,
             'pin': pin,
-            'program': None
+            'program': program
         }
         
         return configuration
@@ -353,23 +367,19 @@ def run(host, port, database='modled', disable_ledstrip=False):
         should_signal = False
         if new_configuration['on'] != old_configuration['on']:
             should_signal = True
-        if new_configuration['fixed'] == True:
+        if new_configuration['program'] != old_configuration['program']:
+            should_signal = True
+        if new_configuration['program'] == 'fixed':
             if new_configuration['red'] != old_configuration['red']:
                 should_signal = True
             if new_configuration['green'] != old_configuration['green']:
                 should_signal = True
             if new_configuration['blue'] != old_configuration['blue']:
                 should_signal = True
-    
-        program = 'fixed'
-        if new_configuration['rainbow']:
-            program = 'rainbow'
-        if new_configuration['strandtest']:
-            program = 'strandtest'
 
+        program = new_configuration['program']
         logger.debug(f"program to run next: {program}")
 
-        new_configuration['program'] = program
         controller.updateConfiguration(new_configuration)
 
         logger.debug(f"Should signal: {should_signal}")
