@@ -117,9 +117,9 @@ class ModLedController(threading.Thread):
             # using Modbus. We need to device a solution for this. For now, we pick the hardcoded defaults.
             self.ledstrip = ledstrip.ExceptionRaisingLedstrip(
                 queue=self._queue,
-                count=self._number_of_leds, # ledstrip.LED_COUNT
+                num=self._number_of_leds, # ledstrip.LED_COUNT
                 pin=self._pin, # ledstrip.LED_PIN
-                frequence=ledstrip.LED_FREQUENCE,
+                freq_hz=ledstrip.LED_FREQUENCE,
                 dma=ledstrip.LED_DMA,
                 invert=ledstrip.LED_INVERT,
                 brightness=self._brightness # ledstrip.LED_BRIGHTNESS
