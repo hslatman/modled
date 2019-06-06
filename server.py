@@ -88,71 +88,122 @@ class ExceptionRaisingLedstripMock(object):
 
 class ModLedController(threading.Thread):
 
-    def __init__(self, queue, disable_ledstrip=False):
+    def __init__(self, configuration: {}, queue, disable_ledstrip=False):
         super(ModLedController, self).__init__()
 
         self._queue = queue
         self._stop_event = threading.Event()
         self._ledstrip_enabled = not disable_ledstrip
 
+        self._configuration = None
+
+        self._number_of_leds = configuration['number_of_leds']
+        self._pin = configuration['pin']
+        self._brightness = configuration['brightness']
+
+        self._on = False
+        self._program = None
+        self._color_tuple = None
+
+        self._has_bugun = False
+        self._state = 'off'
+
+        self.updateConfiguration(configuration)
+
         if self._ledstrip_enabled:
             import ledstrip
-
-            count = ledstrip.LED_COUNT
-            pin = ledstrip.LED_PIN
-            frequence = ledstrip.LED_FREQUENCE
-            dma = ledstrip.LED_DMA
-            invert = ledstrip.LED_INVERT
-            brightness =  ledstrip.LED_BRIGHTNESS
 
             # TODO: we want the ledstrip to be initialized with some settings that can be set
             # using Modbus. We need to device a solution for this. For now, we pick the hardcoded defaults.
             self.ledstrip = ledstrip.ExceptionRaisingLedstrip(
                 queue=self._queue,
-                count=count, 
-                pin=pin, 
-                frequence=frequence, 
-                dma=dma, 
-                invert=invert, 
-                brightness=brightness
+                count=self._number_of_leds, # ledstrip.LED_COUNT
+                pin=self._pin, # ledstrip.LED_PIN
+                frequence=ledstrip.LED_FREQUENCE,
+                dma=ledstrip.LED_DMA,
+                invert=ledstrip.LED_INVERT,
+                brightness=self._brightness # ledstrip.LED_BRIGHTNESS
             )
         else:
             self.ledstrip = ExceptionRaisingLedstripMock(self._queue)
+
+    def updateConfiguration(self, configuration: {}):
+        self._configuration = configuration
+        logger.debug(f"Configuration: {self._configuration}")
+        self._on = configuration['on']
+
+        program = configuration['program'] if configuration['program'] else 'fixed'
+        self._program = program
+        self._configuration['program'] = program
+
+        red, green, blue = configuration['red'], configuration['green'], configuration['blue']
+        self._color_tuple = (red, green, blue)
+
+
+    def getConfiguration(self):
+        return self._configuration
 
     def run(self):
         self.drive()
 
     def drive(self):
         logger.debug('starting ledstrip')
+        logger.debug(f"Configuration: {self._configuration}")
         while not self.stopped():
-            if self._ledstrip_enabled:
-                # TODO: drive the ledstrip, by configuring it right, starting the program, etc.
-                try:
-                    logger.debug('driving ledstrip')
-                except ledstrip.LedstripSwitchException as e:
-                    logger.debug(e)
-                    logger.debug('LedstripSwitchException handled')
-            else:
-                # NOTE: this implementation is provided for the sole purpose of simulating the ledstrip
-                try:
-                    self.ledstrip.show()
-                    time.sleep(1)
-                except LedstripSwitchException as e:
-                    logger.debug(e)
-                    logger.debug('LedstripSwitchException handled')
-                
-            # TODO: logic for changing the ledstrip color, program, etc.
-            # TODO: can we make this work with asyncio?
+            should_check_state = False
+            if self._on:
+                if self._ledstrip_enabled:
+                    if not self._has_bugun:
+                        self.ledstrip.begin()
+                        self._has_bugun = True
+                    try:
+                        # TODO: drive the ledstrip, by configuring it right, starting the program, etc.
+                        logger.debug('driving ledstrip')
+                    except ledstrip.LedstripSwitchException as e:
+                        logger.debug(e)
+                        logger.debug('LedstripSwitchException handled')
+                        should_check_state = True
+                else:
+                    # NOTE: this implementation is provided for the sole purpose of simulating the ledstrip
+                    try:
+
+                        self.ledstrip.show()
+                        time.sleep(1)
+                    except LedstripSwitchException as e:
+                        logger.debug(e)
+                        logger.debug('LedstripSwitchException handled')
+                        should_check_state = True
+                    
+                # TODO: logic for changing the ledstrip color, program, etc.
+                # TODO: can we make this work with asyncio?
+            #else:
+                # When we should be off, we'll sleep for a little while, to not seem too busy...
+            #    time.sleep(1)
+            #    should_check_state = True
+
+            if should_check_state:
+                if self._on:
+                    if self._state == 'off':
+                        # we should turn on
+                        self._state = 'on' # leds will go in next loop?
+                else:
+                    if self._state == 'on':
+                        self.clear()
+
 
     def loop(self):
         # TODO: check whether we should change the program and/or configuration for ledstrip
         # Should be performed in a thread safe manner, because we're in a different thread
         logger.debug('controller loop')
 
-    def stop(self):
-        logger.debug('stopping ledstrip')
+    def clear(self):
+        logger.debug('clearing ledstrip')
         if self._ledstrip_enabled and hasattr(self, 'ledstrip') and self.ledstrip:
             self.ledstrip.clear()
+
+    def stop(self):
+        logger.debug('stopping ledstrip')
+        self.clear()
         self._stop_event.set()
 
     def stopped(self):
@@ -236,12 +287,43 @@ def run(host, port, database='modled', disable_ledstrip=False):
         single=False
     )
 
-    function = 3 # read holding registers
-    address = 0
-    count = 10
+    def determine_configuration():
 
-    values = context[unit].getValues(function, address, count)
-    logger.debug("Values from datastore: " + str(values))
+        function = 3 # read holding registers
+        address = 0
+        count = 10
+
+        values = context[unit].getValues(function, address, count)
+        logger.debug("Values from datastore: " + str(values))
+
+        a40001, a40002, a40003, a40004, a40005, a40006, a40007, a40008 = values[1:9] # take 8 values
+        on = (a40001 & 1 << 0 != 0) # zero'th bit
+        fixed = (a40001 & 1 << 1 != 0) # first bit set
+        rainbow = (a40001 & 1 << 2 != 0) # second bit set
+        strandtest = (a40001 & 1 << 3 != 0) # third bit set
+        red = a40002
+        green = a40003
+        blue = a40004
+        number_of_leds = a40005
+        brightness = a40006
+        pin = a40007
+        configuration = {
+            'on': on,
+            'fixed': fixed,
+            'rainbow': rainbow,
+            'strandtest': strandtest,
+            'red': red,
+            'green': green,
+            'blue': blue,
+            'number_of_leds': number_of_leds,
+            'brightness': brightness,
+            'pin': pin,
+            'program': None
+        }
+        
+        return configuration
+
+    configuration = determine_configuration()
     
     # NOTE: initializing the Modbus server identification
     identity = ModbusDeviceIdentification()
@@ -253,7 +335,7 @@ def run(host, port, database='modled', disable_ledstrip=False):
     identity.MajorMinorRevision = '0.1.0'
 
     signal_queue = queue.Queue()
-    controller = ModLedController(queue=signal_queue, disable_ledstrip=disable_ledstrip)
+    controller = ModLedController(configuration=configuration, queue=signal_queue, disable_ledstrip=disable_ledstrip)
     controller.start()
 
     def handler(sender, **kwargs):
@@ -261,9 +343,40 @@ def run(host, port, database='modled', disable_ledstrip=False):
         # TODO: do something with the address and value in kwargs
         # TODO: determine whether a reset of the ledstrip is required? e.g. first a clear, for some programs?
         # TODO: restart the controller process
+
+        new_configuration = determine_configuration()
+        old_configuration = controller.getConfiguration()
+
+        logger.debug(f"Old configuration: {old_configuration}")
+        logger.debug(f"New configuration: {new_configuration}")
         
-        value = {'address': kwargs['address'], 'value': kwargs['value']}
-        signal_queue.put(value)
+        should_signal = False
+        if new_configuration['on'] != old_configuration['on']:
+            should_signal = True
+        if new_configuration['fixed'] == True:
+            if new_configuration['red'] != old_configuration['red']:
+                should_signal = True
+            if new_configuration['green'] != old_configuration['green']:
+                should_signal = True
+            if new_configuration['blue'] != old_configuration['blue']:
+                should_signal = True
+    
+        program = 'fixed'
+        if new_configuration['rainbow']:
+            program = 'rainbow'
+        if new_configuration['strandtest']:
+            program = 'strandtest'
+
+        logger.debug(f"program to run next: {program}")
+
+        new_configuration['program'] = program
+        controller.updateConfiguration(new_configuration)
+
+        logger.debug(f"Should signal: {should_signal}")
+        if should_signal:
+            logger.debug('signaling to trigger an exception')
+            value = {'address': kwargs['address'], 'value': kwargs['value']}
+            signal_queue.put(value)
 
     control_signal.connect(handler)
 

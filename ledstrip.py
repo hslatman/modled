@@ -193,7 +193,7 @@ class SwitchableLedstrip(Ledstrip):
         raise LedstripSwitchException('Triggered LedstripSwitchException')
 
 
-class ExceptionRaisingLedstrip(Ledstrip)
+class ExceptionRaisingLedstrip(Ledstrip):
     def __init__(self, queue: queue.Queue, num, pin, freq_hz=800000, dma=10, invert=False, brightness=255, channel=0):
         super(ExceptionRaisingLedstrip, self).__init__(num, pin, freq_hz, dma, invert, brightness, channel)
         self._queue = queue
@@ -204,7 +204,8 @@ class ExceptionRaisingLedstrip(Ledstrip)
             value = self._queue.get() # NOTE: we're not doing anything with the value
             raise LedstripSwitchException()
 
-        super(ExceptionThrowingLedstrip, self).show()
+        # TODO: fix this?
+        super(ExceptionRaisingLedstrip, self).show()
 
 
 class LedstripController(object):
