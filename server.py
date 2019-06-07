@@ -12,8 +12,6 @@ import threading
 import time
 import queue
 
-from multiprocessing import Process
-
 from pymodbus.server.asynchronous import StartTcpServer, StopServer
 from pymodbus.device import ModbusDeviceIdentification
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
@@ -37,13 +35,21 @@ FORMAT = ('%(asctime)-15s %(threadName)-15s'
           ' %(levelname)-8s %(module)-15s:%(lineno)-8s %(message)s')
 logging.basicConfig(format=FORMAT)
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 observer = log.PythonLoggingObserver()
 observer.start()
 
 from signals.signals import Signal
 control_signal = Signal(providing_args=['address', 'value'])
+
+ENABLE_LEDSTRIP=False
+try:
+    import ledstrip
+    from rpi_ws281x import *
+    ENABLE_LEDSTRIP=True
+except Exception as e:
+    logger.info(f"Ledstrip control disabled: {e}")
 
 class LedstripControlRequest(WriteSingleRegisterRequest):
 
@@ -60,6 +66,8 @@ class LedstripControlRequest(WriteSingleRegisterRequest):
             value = result.value
 
             logger.debug(f"Value {value} written at {address}") # NOTE: the address reported here should probably be incremented to properly reflect the value in get/set-values
+
+            logger.debug('sending control_signal...')
 
             control_signal.send_robust(sender=None, address=address, value=value)
 
@@ -111,10 +119,6 @@ class ModLedController(threading.Thread):
         self.updateConfiguration(configuration)
 
         if self._ledstrip_enabled:
-            import ledstrip
-
-            # TODO: we want the ledstrip to be initialized with some settings that can be set
-            # using Modbus. We need to device a solution for this. For now, we pick the hardcoded defaults.
             self.ledstrip = ledstrip.ExceptionRaisingLedstrip(
                 queue=self._queue,
                 num=self._number_of_leds, # ledstrip.LED_COUNT
@@ -130,44 +134,34 @@ class ModLedController(threading.Thread):
     def updateConfiguration(self, configuration: {}):
         self._configuration = configuration
         logger.debug(f"Configuration: {self._configuration}")
-        self._on = configuration['on']
 
-        program = configuration['program'] if configuration['program'] else 'fixed'
-        self._program = program
-        self._configuration['program'] = program
+        self._on = configuration['on']
+        self._program = configuration['program'] 
 
         red, green, blue = configuration['red'], configuration['green'], configuration['blue']
         self._color_tuple = (red, green, blue)
-
 
     def getConfiguration(self):
         return self._configuration
 
     def run(self):
-        self.drive()
-
-    def drive(self):
         logger.debug('starting ledstrip')
         logger.debug(f"Configuration: {self._configuration}")
         while not self.stopped():
             should_check_state = False
             if self._on:
                 if self._ledstrip_enabled:
-                    import ledstrip
                     if not self._has_bugun:
                         self.ledstrip.begin()
                         self._has_bugun = True
                     try:
-                        # TODO: drive the ledstrip, by configuring it right, starting the program, etc.
-                        logger.debug('driving ledstrip')
+                        logger.debug('driving ledstrip') # TODO: this can be pretty verbose...
                         if self._program == 'rainbow':
                             self.ledstrip.rainbow()
-                        elif self._program == 'strandtest':
-                            from rpi_ws281x import Color
-                            color = Color(255, 255, 255)
-                            self.ledstrip.theaterChase(color) # TODO: strandtest?
+                        elif self._program == 'strand_test':
+                            color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
+                            self.ledstrip.theaterChase(color) # TODO: implement the actual strandtest
                         else:
-                            from rpi_ws281x import Color
                             color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
                             self.ledstrip.fill(color)
                             time.sleep(1)
@@ -182,13 +176,12 @@ class ModLedController(threading.Thread):
                         logger.debug(f"Program: {self._program}")
                         if self._program == 'fixed':
                             logger.debug(f"Colors: {self._color_tuple}")
-                        time.sleep(5)
+                        time.sleep(5) # TODO: this can be a bit verbose
                     except LedstripSwitchException as e:
                         logger.debug(e)
                         logger.debug('LedstripSwitchException handled')
                         should_check_state = True
                     
-                # TODO: logic for changing the ledstrip color, program, etc.
                 # TODO: can we make this work with asyncio?
             else:
                 # When we should be off, we'll sleep for a little while, to not seem too busy...
@@ -203,12 +196,6 @@ class ModLedController(threading.Thread):
                 else:
                     if self._state == 'on':
                         self.clear()
-
-
-    def loop(self):
-        # TODO: check whether we should change the program and/or configuration for ledstrip
-        # Should be performed in a thread safe manner, because we're in a different thread
-        logger.debug('controller loop')
 
     def clear(self):
         logger.debug('clearing ledstrip')
@@ -252,7 +239,10 @@ class ModLedSqlSlaveContext(SqlSlaveContext):
         return count
 
 
-def run(host, port, database='modled', disable_ledstrip=False):
+def run(host, port, database='modled', disable_ledstrip=False, debug=False):
+
+    if debug:
+        logger.setLevel(logging.DEBUG)
 
     # store = ModbusSlaveContext(
     #     hr=ModbusSequentialDataBlock(0, [17]*10)
@@ -268,7 +258,7 @@ def run(host, port, database='modled', disable_ledstrip=False):
     # The code for initialization seems a bit off, because the block values are NOT used for initialisation of the
     # SQLite database when the SqlSlaveContext is created. Perhaps this requires a bug fix in the _create_db function?
     # We should probably parse all the kwargs for blocks, these should be added by default.
-    block = ModbusSequentialDataBlock(1, [17]*10)
+    block = ModbusSequentialDataBlock(1, [17]*10) # TODO: set some sensible defaults here
     
     # NOTE: below we're defining our modled.sqlite3 database (on disk) and table (modled) that
     # pymodbus should use to write its values to. Initialisation of the ModbusSequentialDataBlock is
@@ -291,8 +281,6 @@ def run(host, port, database='modled', disable_ledstrip=False):
     #  2) override _create_db function locally and make sure that we can parse the block (good)
     #  3) prefil the SQLite database, with the values we want when it does not exist (easiest?)
 
-    # TODO: create and write the right configuration in the ModbusSequentialDataBlock (block) for normal operation
-
     unit = 0 # NOTE: unit functions like an identifier for a slave
     store = ModLedSqlSlaveContext(database=database)
     store.initialize(hr=block) # NOTE: we're initializing with a block for Holding Registers only now.
@@ -314,7 +302,7 @@ def run(host, port, database='modled', disable_ledstrip=False):
         on = (a40001 & 1 << 0 != 0) # zero'th bit
         fixed = (a40001 & 1 << 1 != 0) # first bit set
         rainbow = (a40001 & 1 << 2 != 0) # second bit set
-        strandtest = (a40001 & 1 << 3 != 0) # third bit set
+        strand_test = (a40001 & 1 << 3 != 0) # third bit set
         red = a40002
         green = a40003
         blue = a40004
@@ -322,11 +310,24 @@ def run(host, port, database='modled', disable_ledstrip=False):
         brightness = a40006
         pin = a40007
 
-        program = 'fixed'
+        # TODO: programs to add: theaterChase, theaterChaseRainbow, rainbowCycle?
+        rainbow_cycle = False
+        theater_chase = False
+        theater_chase_rainbow = False
+
+        program = None
         if rainbow:
             program = 'rainbow'
-        if strandtest:
-            program = 'strandtest'
+        if strand_test:
+            program = 'strand_test'
+        if rainbow_cycle:
+            program = 'rainbow_cycle'
+        if theater_chase:
+            program = 'theater_chase'
+        if theater_chase_rainbow:
+            program = 'theater_chase_rainbow'
+        if not program:
+            program = 'fixed'
 
         configuration = {
             'on': on,
@@ -381,10 +382,12 @@ def run(host, port, database='modled', disable_ledstrip=False):
             if new_configuration['blue'] != old_configuration['blue']:
                 should_signal = True
 
+        # TODO: additional logic for signaling for the other programs to add
+
         program = new_configuration['program']
         logger.debug(f"program to run next: {program}")
 
-        controller.updateConfiguration(new_configuration)
+        controller.updateConfiguration(new_configuration) # NOTE: we're writing value to a thread, but it's pretty safe to do so at this point
 
         logger.debug(f"Should signal: {should_signal}")
         if should_signal:
@@ -437,16 +440,20 @@ if __name__ == "__main__":
     parser.add_argument('-P', '--port', nargs='?', type=int, default=502, help='The Modbus server port number')
     parser.add_argument('-D', '--database', nargs='?', type=str, default='modled', help='The datatabase file (prefix) to use')
     parser.add_argument('-DL', '--disable-ledstrip', action='store_true', help='Disable the ledstrip operation (for debugging)')
+    parser.add_argument('--debug', action='store_true', help='Whether to show debug logs')
     
     args = parser.parse_args()
 
     host = args.host
     port = args.port
     database = args.database
-    disable_ledstrip = args.disable_ledstrip
+    debug = args.debug
+
+    # NOTE: in case we can't load the required library, or when explicitly set, we'll disable driving the ledstrip
+    disable_ledstrip = args.disable_ledstrip or not ENABLE_LEDSTRIP
 
     try:
-        run(host, port, database=database, disable_ledstrip=disable_ledstrip)
+        run(host, port, database=database, disable_ledstrip=disable_ledstrip, debug=debug)
     except Exception as e:
         logger.error(e)
     

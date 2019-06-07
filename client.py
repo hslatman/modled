@@ -46,8 +46,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # TODO: add some additional parameters to set the address and values to read/write?
-
     print(args)
 
     host = args.host
