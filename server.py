@@ -96,7 +96,7 @@ class ExceptionRaisingLedstripMock(object):
 
 class ModLedController(threading.Thread):
 
-    def __init__(self, configuration: {}, queue, disable_ledstrip=False):
+    def __init__(self, configuration: {}, queue: queue.Queue, disable_ledstrip=False):
         super(ModLedController, self).__init__()
 
         self._queue = queue
@@ -133,8 +133,7 @@ class ModLedController(threading.Thread):
 
     def updateConfiguration(self, configuration: {}):
         self._configuration = configuration
-        logger.debug(f"Configuration: {self._configuration}")
-
+        
         self._on = configuration['on']
         self._program = configuration['program'] 
 
@@ -316,6 +315,8 @@ def run(host, port, database='modled', disable_ledstrip=False, debug=False):
         theater_chase_rainbow = False
 
         program = None
+        if fixed:
+            program = 'fixed'
         if rainbow:
             program = 'rainbow'
         if strand_test:
@@ -327,7 +328,7 @@ def run(host, port, database='modled', disable_ledstrip=False, debug=False):
         if theater_chase_rainbow:
             program = 'theater_chase_rainbow'
         if not program:
-            program = 'fixed'
+            program = 'fixed' # TODO: decide whether we should go off instead in case no program determined?
 
         configuration = {
             'on': on,
