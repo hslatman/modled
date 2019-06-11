@@ -225,6 +225,7 @@ class ModLedController(threading.Thread):
                 else:
                     if self._state == 'on':
                         self.clear()
+                        self._state = 'off'
 
     def clear(self):
         logger.debug('clearing ledstrip')
