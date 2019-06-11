@@ -177,9 +177,16 @@ class ModLedController(threading.Thread):
                         self.ledstrip.begin()
                         self._has_bugun = True
                     try:
-                        logger.debug('driving ledstrip') # TODO: this can be pretty verbose...
+                        logger.debug('driving ledstrip') # TODO: this can be pretty verbose; can we filter out some of it?
                         if self._program == 'rainbow':
                             self.ledstrip.rainbow()
+                        elif self._program == 'rainbow_cycle':
+                            self.ledstrip.rainbowCycle(1)
+                        elif self._program == 'theater_chase':
+                            color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
+                            self.ledstrip.theaterChase(color)
+                        elif self._program == 'theater_chase_rainbow':
+                            self.ledstrip.theaterChaseRainbow()
                         elif self._program == 'strand_test':
                             color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
                             self.ledstrip.theaterChase(color) # TODO: implement the actual strandtest
@@ -227,6 +234,7 @@ class ModLedController(threading.Thread):
     def stop(self):
         logger.debug('stopping ledstrip')
         self.clear()
+        print(self.ledstrip.getPixels())
         self._stop_event.set()
 
     def stopped(self):
