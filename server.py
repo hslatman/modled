@@ -280,7 +280,7 @@ def run(host, port, database='modled', disable_ledstrip=False, debug=False):
     #  2) override _create_db function locally and make sure that we can parse the block (good)
     #  3) prefil the SQLite database, with the values we want when it does not exist (easiest?)
 
-    unit = 0 # NOTE: unit functions like an identifier for a slave
+    unit = 1 # NOTE: unit functions like an identifier for a slave
     store = ModLedSqlSlaveContext(database=database)
     store.initialize(hr=block) # NOTE: we're initializing with a block for Holding Registers only now.
     context = ModbusServerContext(
