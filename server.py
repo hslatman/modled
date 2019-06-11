@@ -17,7 +17,7 @@ from pymodbus.device import ModbusDeviceIdentification
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
 from pymodbus.datastore.database import SqlSlaveContext
 from pymodbus.pdu import ModbusRequest, ModbusResponse
-from pymodbus.register_write_message import WriteSingleRegisterRequest, WriteSingleRegisterResponse
+from pymodbus.register_write_message import WriteSingleRegisterRequest, WriteSingleRegisterResponse, WriteMultipleRegistersRequest, WriteMultipleRegistersResponse
 
 from twisted.logger._levels import LogLevel
 from twisted.internet import reactor
@@ -51,7 +51,7 @@ try:
 except Exception as e:
     logger.info(f"Ledstrip control disabled: {e}")
 
-class LedstripControlRequest(WriteSingleRegisterRequest):
+class SingleLedstripControlRequest(WriteSingleRegisterRequest):
 
     def __init__(self, address=None, **kwargs):
         super(LedstripControlRequest, self).__init__(self, **kwargs)
@@ -70,6 +70,29 @@ class LedstripControlRequest(WriteSingleRegisterRequest):
             logger.debug('sending control_signal...')
 
             control_signal.send_robust(sender=None, address=address, value=value)
+
+            logger.debug('control_signal sent')
+
+        return result
+
+class MultipleLedstripControlRequest(WriteMultipleRegistersRequest):
+
+    def __init__(self, address=None, **kwargs):
+        super(MultipleLedstripControlRequest, self).__init__(self, **kwargs)
+        self.address = address
+
+    def execute(self, context):
+        result = super().execute(context)
+
+        if isinstance(result, ModbusResponse):
+            address = result.address
+            count = result.count
+
+            logger.debug(f"Written {count} values at {address}") # NOTE: the address reported here should probably be incremented to properly reflect the value in get/set-values
+
+            logger.debug('sending control_signal...')
+
+            control_signal.send_robust(sender=None, address=address, value=None)
 
             logger.debug('control_signal sent')
 
@@ -403,7 +426,7 @@ def run(host, port, database='modled', disable_ledstrip=False, debug=False):
         context, 
         identity=identity, 
         address=(host, port),
-        custom_functions=[LedstripControlRequest],
+        custom_functions=[SingleLedstripControlRequest, MultipleLedstripControlRequest],
         defer_reactor_run=True
     )
 
