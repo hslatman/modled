@@ -201,7 +201,7 @@ def run_async_server():
     # Bit 3: Activate color mix / strandtest (40001.3)
     # 40005: number of leds to use;
     #   Only read at the start of ledstrip initialization
-    # 40006: brigtness to set
+    # 40006: brightness to set
     #   Only read at the start of ledstrip initialization
     # 40007: LED pin (digital pin)
     #   Only read at the start of ledstrip initialization

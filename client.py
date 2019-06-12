@@ -11,7 +11,7 @@ logging.basicConfig(format=FORMAT)
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-def main(host, port, address, write=None, unit=0): # NOTE: the unit is like an identifier for the slave; it corresponds to the identifier for a store
+def main(host, port, address, write=None, unit=1): # NOTE: the unit is like an identifier for the slave; it corresponds to the identifier for a store
 
     client = ModbusTcpClient(host, port=port)
     client.connect()
@@ -42,11 +42,9 @@ if __name__ == "__main__":
     parser.add_argument('-P', '--port', nargs='?', type=int, default=502, help='The Modbus server port number to connect to')
     parser.add_argument('-W', '--write', nargs='?', type=int, default=None, help='Enable writing to the address, otherwise it will be read')
     parser.add_argument('-A', '--address', type=int, default=1, help='The address to read from / write to (in case -W was given)')
-    parser.add_argument('-U', '--unit', type=int, default=0, help='The unit (slave identifier) to use')
+    parser.add_argument('-U', '--unit', type=int, default=1, help='The unit (slave identifier) to use')
 
     args = parser.parse_args()
-
-    # TODO: add some additional parameters to set the address and values to read/write?
 
     print(args)
 

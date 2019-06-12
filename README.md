@@ -18,13 +18,16 @@ The ones that are included in the repository have been adapted slightly
 
 ## TODO
 
-* Add Modbus server and logic for initializing the strip.
-* Add Modbus server and logic for updating the strip.
-* Continuous reconfiguration of program and color settings
-* Toggling programs on/off
-* Improvement for closing the ledstrip: immediate action upon ending program by checking enabled/disabled value before showing the ledstrip again.
-* Initialization of Ledstrip from a Modbus command?
+* ~~Add Modbus server and logic for initializing the strip.~~
+* ~~Add Modbus server and logic for updating the strip.~~
+* ~~Continuous reconfiguration of program and color settings~~
+* ~~Toggling programs on/off~~
+* ~~Improvement for closing the ledstrip: immediate action upon ending program by checking enabled/disabled value before showing the ledstrip again.~~
+* ~~Initialization of Ledstrip from a Modbus command?~~
 * Smooth ledstrip program switches?
 * Smooth script kills, restarts, etc. Should we properly daemonize it? Persist current state when stopping the server?
-* Add option to start/pause the strip from running? StopException, StartException?
-* Break on permission error?
+* Add option to start/pause the strip from running? StopException, StartException? Currently we're using a single signal.
+* ~~Break on permission error?~~
+* Extend the number of programs and improve maintainability of handling programs
+* Settings for configuring walk vs. no walk in ledstrip show
+* Integrate with [Home Assistant](https://www.home-assistant.io/components/modbus/)? 
