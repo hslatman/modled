@@ -177,69 +177,74 @@ class ModLedController(threading.Thread):
         logger.debug('starting ledstrip')
         logger.debug(f"Configuration: {self._configuration}")
         while not self.stopped():
-            should_check_state = False
-            if self._on:
-                if self._ledstrip_enabled:
-                    if not self._has_bugun:
-                        self.ledstrip.begin()
-                        self._has_bugun = True
-                    try:
-                        logger.debug('driving ledstrip') # TODO: this can be pretty verbose; can we filter out some of it?
-                        if self._program == 'rainbow':
-                            self.ledstrip.rainbow()
-                        elif self._program == 'rainbow_cycle':
-                            self.ledstrip.rainbowCycle(1)
-                        elif self._program == 'theater_chase':
-                            color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
-                            self.ledstrip.theaterChase(color)
-                        elif self._program == 'theater_chase_rainbow':
-                            self.ledstrip.theaterChaseRainbow()
-                        elif self._program == 'strand_test':
-                            self.ledstrip.colorWipe(Color(255, 0, 0))  # Red wipe
-                            self.ledstrip.colorWipe(Color(0, 255, 0))  # Blue wipe
-                            self.ledstrip.colorWipe(Color(0, 0, 255))  # Green wipe                            
-                            self.ledstrip.theaterChase(Color(127, 127, 127))  # White theater chase
-                            self.ledstrip.theaterChase(Color(127,   0,   0))  # Red theater chase
-                            self.ledstrip.theaterChase(Color(  0,   0, 127))  # Blue theater chase
-                            self.ledstrip.rainbow()
-                            self.ledstrip.rainbowCycle(1)
-                            self.ledstrip.theaterChaseRainbow()
-                        else:
-                            color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
-                            self.ledstrip.fill(color)
-                            time.sleep(1)
-                    except ledstrip.LedstripSwitchException as e:
-                        logger.debug(e)
-                        logger.debug('LedstripSwitchException handled')
-                        should_check_state = True
-                else:
-                    # NOTE: this implementation is provided for the sole purpose of simulating the ledstrip
-                    try:
-                        self.ledstrip.show()
-                        logger.debug(f"Program: {self._program}")
-                        if self._program == 'fixed':
-                            logger.debug(f"Colors: {self._color_tuple}")
-                        time.sleep(5) # TODO: this can be a bit verbose
-                    except LedstripSwitchException as e:
-                        logger.debug(e)
-                        logger.debug('LedstripSwitchException handled')
-                        should_check_state = True
-                    
-                # TODO: can we make this work with asyncio?
-            else:
-                # When we should be off, we'll sleep for a little while, to not seem too busy...
-                time.sleep(1)
-                should_check_state = True
-
-            if should_check_state:
+            try: 
+                should_check_state = False
                 if self._on:
-                    if self._state == 'off':
-                        # we should turn on
-                        self._state = 'on' # leds will go in next loop?
+                    if self._ledstrip_enabled:
+                        if not self._has_bugun:
+                            self.ledstrip.begin()
+                            self._has_bugun = True
+                        try:
+                            logger.debug('driving ledstrip') # TODO: this can be pretty verbose; can we filter out some of it?
+                            if self._program == 'rainbow':
+                                self.ledstrip.rainbow()
+                            elif self._program == 'rainbow_cycle':
+                                self.ledstrip.rainbowCycle(1)
+                            elif self._program == 'theater_chase':
+                                color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
+                                self.ledstrip.theaterChase(color)
+                            elif self._program == 'theater_chase_rainbow':
+                                self.ledstrip.theaterChaseRainbow()
+                            elif self._program == 'strand_test':
+                                self.ledstrip.colorWipe(Color(255, 0, 0))  # Red wipe
+                                self.ledstrip.colorWipe(Color(0, 255, 0))  # Blue wipe
+                                self.ledstrip.colorWipe(Color(0, 0, 255))  # Green wipe                            
+                                self.ledstrip.theaterChase(Color(127, 127, 127))  # White theater chase
+                                self.ledstrip.theaterChase(Color(127,   0,   0))  # Red theater chase
+                                self.ledstrip.theaterChase(Color(  0,   0, 127))  # Blue theater chase
+                                self.ledstrip.rainbow()
+                                self.ledstrip.rainbowCycle(1)
+                                self.ledstrip.theaterChaseRainbow()
+                            else:
+                                color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
+                                self.ledstrip.fill(color)
+                                time.sleep(1)
+                        except ledstrip.LedstripSwitchException as e:
+                            logger.debug(e)
+                            logger.debug('LedstripSwitchException handled')
+                            should_check_state = True
+                    else:
+                        # NOTE: this implementation is provided for the sole purpose of simulating the ledstrip
+                        try:
+                            self.ledstrip.show()
+                            logger.debug(f"Program: {self._program}")
+                            if self._program == 'fixed':
+                                logger.debug(f"Colors: {self._color_tuple}")
+                            time.sleep(5) # TODO: this can be a bit verbose
+                        except LedstripSwitchException as e:
+                            logger.debug(e)
+                            logger.debug('LedstripSwitchException handled')
+                            should_check_state = True
+                        
+                    # TODO: can we make this work with asyncio?
                 else:
-                    if self._state == 'on':
-                        self.clear()
-                        self._state = 'off'
+                    # When we should be off, we'll sleep for a little while, to not seem too busy...
+                    time.sleep(1)
+                    should_check_state = True
+
+                if should_check_state:
+                    if self._on:
+                        if self._state == 'off':
+                            # we should turn on
+                            self._state = 'on' # leds will go in next loop?
+                    else:
+                        if self._state == 'on':
+                            self.clear()
+                            self._state = 'off'
+
+            except ledstrip.LedstripSwitchException as e:
+                # How to continue???
+                continue
 
     def clear(self):
         logger.debug('clearing ledstrip')
