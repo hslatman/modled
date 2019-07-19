@@ -109,10 +109,17 @@ class ExceptionRaisingLedstripMock(object):
     def show(self):
         # NOTE: we're overriding the show() function as a natural break point during normal ledstrip operation
         if not self._queue.empty():
-            value = self._queue.get()
+            value = None
+            empty = False
+            while not empty:
+                try:
+                    value = self._queue.get(block=False)
+                except Exception as e:
+                    empty = True
             logger.debug(f"Value: {value}")
-            logger.debug('raising LedstripSwitchException')
-            raise LedstripSwitchException()
+            if value:
+                logger.debug('raising LedstripSwitchException')
+                raise LedstripSwitchException()
 
         logger.debug('showing ledstrip')
 
@@ -188,17 +195,12 @@ class ModLedController(threading.Thread):
                         elif self._program == 'theater_chase_rainbow':
                             self.ledstrip.theaterChaseRainbow()
                         elif self._program == 'strand_test':
-                            #color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
-                            #self.ledstrip.theaterChase(color)
-                            
                             self.ledstrip.colorWipe(Color(255, 0, 0))  # Red wipe
                             self.ledstrip.colorWipe(Color(0, 255, 0))  # Blue wipe
-                            self.ledstrip.colorWipe(Color(0, 0, 255))  # Green wipe
-                            
+                            self.ledstrip.colorWipe(Color(0, 0, 255))  # Green wipe                            
                             self.ledstrip.theaterChase(Color(127, 127, 127))  # White theater chase
                             self.ledstrip.theaterChase(Color(127,   0,   0))  # Red theater chase
                             self.ledstrip.theaterChase(Color(  0,   0, 127))  # Blue theater chase
-                            
                             self.ledstrip.rainbow()
                             self.ledstrip.rainbowCycle(1)
                             self.ledstrip.theaterChaseRainbow()
