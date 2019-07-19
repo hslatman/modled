@@ -54,7 +54,7 @@ except Exception as e:
 class SingleLedstripControlRequest(WriteSingleRegisterRequest):
 
     def __init__(self, address=None, **kwargs):
-        super(LedstripControlRequest, self).__init__(self, **kwargs)
+        super(SingleLedstripControlRequest, self).__init__(self, **kwargs)
         self.address = address
         self.count = 16
 
