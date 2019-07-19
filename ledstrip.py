@@ -86,6 +86,14 @@ class Ledstrip(Adafruit_NeoPixel):
             pos -= 170
             return Color(0, pos * 3, 255 - pos * 3)
 
+    # Define functions which animate LEDs in various ways.
+    def colorWipe(self, color, wait_ms=50):
+        """Wipe color across display a pixel at a time."""
+        for i in range(self.numPixels()):
+            self.setPixelColor(i, color)
+            self.show()
+            time.sleep(wait_ms/1000.0)
+
     def rainbow(self, iterations=1):
         """Draw rainbow that fades across all pixels at once."""
         for j in range(256 * iterations):

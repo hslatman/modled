@@ -188,8 +188,20 @@ class ModLedController(threading.Thread):
                         elif self._program == 'theater_chase_rainbow':
                             self.ledstrip.theaterChaseRainbow()
                         elif self._program == 'strand_test':
-                            color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
-                            self.ledstrip.theaterChase(color) # TODO: implement the actual strandtest
+                            #color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
+                            #self.ledstrip.theaterChase(color)
+                            
+                            self.ledstrip.colorWipe(strip, Color(255, 0, 0))  # Red wipe
+                            self.ledstrip.colorWipe(strip, Color(0, 255, 0))  # Blue wipe
+                            self.ledstrip.colorWipe(strip, Color(0, 0, 255))  # Green wipe
+                            
+                            self.ledstrip.theaterChase(Color(127, 127, 127))  # White theater chase
+                            self.ledstrip.theaterChase(Color(127,   0,   0))  # Red theater chase
+                            self.ledstrip.theaterChase(Color(  0,   0, 127))  # Blue theater chase
+                            
+                            self.ledstrip.rainbow()
+                            self.ledstrip.rainbowCycle(1)
+                            self.ledstrip.theaterChaseRainbow()
                         else:
                             color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
                             self.ledstrip.fill(color)
@@ -334,6 +346,7 @@ def run(host, port, database='modled', disable_ledstrip=False, debug=False):
         fixed = (a40001 & 1 << 1 != 0) # first bit set
         rainbow = (a40001 & 1 << 2 != 0) # second bit set
         strand_test = (a40001 & 1 << 3 != 0) # third bit set
+        theater_chase = (a40001 & 1 << 4 != 0) # fourth bit set
         red = a40002
         green = a40003
         blue = a40004
@@ -343,7 +356,6 @@ def run(host, port, database='modled', disable_ledstrip=False, debug=False):
 
         # TODO: programs to add: theaterChase, theaterChaseRainbow, rainbowCycle?
         rainbow_cycle = False
-        theater_chase = False
         theater_chase_rainbow = False
 
         program = None
