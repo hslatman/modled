@@ -191,9 +191,9 @@ class ModLedController(threading.Thread):
                             #color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
                             #self.ledstrip.theaterChase(color)
                             
-                            self.ledstrip.colorWipe(strip, Color(255, 0, 0))  # Red wipe
-                            self.ledstrip.colorWipe(strip, Color(0, 255, 0))  # Blue wipe
-                            self.ledstrip.colorWipe(strip, Color(0, 0, 255))  # Green wipe
+                            self.ledstrip.colorWipe(Color(255, 0, 0))  # Red wipe
+                            self.ledstrip.colorWipe(Color(0, 255, 0))  # Blue wipe
+                            self.ledstrip.colorWipe(Color(0, 0, 255))  # Green wipe
                             
                             self.ledstrip.theaterChase(Color(127, 127, 127))  # White theater chase
                             self.ledstrip.theaterChase(Color(127,   0,   0))  # Red theater chase
