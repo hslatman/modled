@@ -206,6 +206,7 @@ class ModLedController(threading.Thread):
                                 self.ledstrip.rainbowCycle(1)
                                 self.ledstrip.theaterChaseRainbow()
                             else:
+                                # TODO: Small optimization: don't trigger every time when there's no change?
                                 color = Color(self._color_tuple[0], self._color_tuple[1], self._color_tuple[2])
                                 self.ledstrip.fill(color)
                                 time.sleep(1)

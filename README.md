@@ -18,6 +18,7 @@ The ones that are included in the repository have been adapted slightly
 
 ## TODO
 
+* Deploy using an example Balena instance?
 * ~~Add Modbus server and logic for initializing the strip.~~
 * ~~Add Modbus server and logic for updating the strip.~~
 * ~~Continuous reconfiguration of program and color settings~~
@@ -31,3 +32,6 @@ The ones that are included in the repository have been adapted slightly
 * Extend the number of programs and improve maintainability of handling programs
 * Settings for configuring walk vs. no walk in ledstrip show
 * Integrate with [Home Assistant](https://www.home-assistant.io/components/modbus/)? 
+* Small issue with clearing the strip when stopping the program; the strip is only cleared in the fixed program, not yet in theater chase, for example
+* Add option for changing the number of (milli)seconds of sleep 
+* Add supervisord for automatic startup
